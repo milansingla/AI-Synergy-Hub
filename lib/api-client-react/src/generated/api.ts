@@ -24,6 +24,7 @@ import type {
   AdminUpdateUserRoleBody,
   AdminUser,
   ApiError,
+  CompleteProfileBody,
   CreateAccessCodeBody,
   CreateInterviewBody,
   CreateInviteBody,
@@ -868,6 +869,92 @@ export const useUpdateUserProfile = <
   TContext
 > => {
   return useMutation(getUpdateUserProfileMutationOptions(options));
+};
+
+/**
+ * @summary Complete the user's profile (name, university, etc.)
+ */
+export const getCompleteUserProfileUrl = () => {
+  return `/api/users/profile/complete`;
+};
+
+export const completeUserProfile = async (
+  completeProfileBody: CompleteProfileBody,
+  options?: RequestInit,
+): Promise<UserProfile> => {
+  return customFetch<UserProfile>(getCompleteUserProfileUrl(), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(completeProfileBody),
+  });
+};
+
+export const getCompleteUserProfileMutationOptions = <
+  TError = ErrorType<ApiError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof completeUserProfile>>,
+    TError,
+    { data: BodyType<CompleteProfileBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof completeUserProfile>>,
+  TError,
+  { data: BodyType<CompleteProfileBody> },
+  TContext
+> => {
+  const mutationKey = ["completeUserProfile"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof completeUserProfile>>,
+    { data: BodyType<CompleteProfileBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return completeUserProfile(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CompleteUserProfileMutationResult = NonNullable<
+  Awaited<ReturnType<typeof completeUserProfile>>
+>;
+export type CompleteUserProfileMutationBody = BodyType<CompleteProfileBody>;
+export type CompleteUserProfileMutationError = ErrorType<ApiError>;
+
+/**
+ * @summary Complete the user's profile (name, university, etc.)
+ */
+export const useCompleteUserProfile = <
+  TError = ErrorType<ApiError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof completeUserProfile>>,
+    TError,
+    { data: BodyType<CompleteProfileBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof completeUserProfile>>,
+  TError,
+  { data: BodyType<CompleteProfileBody> },
+  TContext
+> => {
+  return useMutation(getCompleteUserProfileMutationOptions(options));
 };
 
 /**

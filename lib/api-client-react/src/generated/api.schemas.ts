@@ -159,6 +159,11 @@ export interface UserProfile {
   id: string;
   email: string;
   role: UserProfileRole;
+  fullName?: string | null;
+  university?: string | null;
+  department?: string | null;
+  yearOfStudy?: string | null;
+  profileCompleted: boolean;
   createdAt: string;
 }
 
@@ -173,6 +178,13 @@ export const UpdateUserProfileBodyRole = {
 
 export interface UpdateUserProfileBody {
   role: UpdateUserProfileBodyRole;
+}
+
+export interface CompleteProfileBody {
+  fullName: string;
+  university: string;
+  department?: string;
+  yearOfStudy?: string;
 }
 
 export interface AdminUser {

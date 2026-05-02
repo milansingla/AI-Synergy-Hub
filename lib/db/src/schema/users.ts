@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, pgEnum, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -8,6 +8,11 @@ export const usersTable = pgTable("users", {
   id: text("id").primaryKey(), // Clerk user ID
   email: text("email").notNull().unique(),
   role: userRoleEnum("role").notNull().default("student"),
+  fullName: text("full_name"),
+  university: text("university"),
+  department: text("department"),
+  yearOfStudy: text("year_of_study"),
+  profileCompleted: boolean("profile_completed").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

@@ -173,6 +173,11 @@ export const GetUserProfileResponse = zod.object({
   id: zod.string(),
   email: zod.string(),
   role: zod.enum(["student", "admin", "facility"]),
+  fullName: zod.string().nullish(),
+  university: zod.string().nullish(),
+  department: zod.string().nullish(),
+  yearOfStudy: zod.string().nullish(),
+  profileCompleted: zod.boolean(),
   createdAt: zod.coerce.date(),
 });
 
@@ -187,6 +192,33 @@ export const UpdateUserProfileResponse = zod.object({
   id: zod.string(),
   email: zod.string(),
   role: zod.enum(["student", "admin", "facility"]),
+  fullName: zod.string().nullish(),
+  university: zod.string().nullish(),
+  department: zod.string().nullish(),
+  yearOfStudy: zod.string().nullish(),
+  profileCompleted: zod.boolean(),
+  createdAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Complete the user's profile (name, university, etc.)
+ */
+export const CompleteUserProfileBody = zod.object({
+  fullName: zod.string(),
+  university: zod.string(),
+  department: zod.string().optional(),
+  yearOfStudy: zod.string().optional(),
+});
+
+export const CompleteUserProfileResponse = zod.object({
+  id: zod.string(),
+  email: zod.string(),
+  role: zod.enum(["student", "admin", "facility"]),
+  fullName: zod.string().nullish(),
+  university: zod.string().nullish(),
+  department: zod.string().nullish(),
+  yearOfStudy: zod.string().nullish(),
+  profileCompleted: zod.boolean(),
   createdAt: zod.coerce.date(),
 });
 
@@ -201,6 +233,11 @@ export const RedeemAccessCodeResponse = zod.object({
   id: zod.string(),
   email: zod.string(),
   role: zod.enum(["student", "admin", "facility"]),
+  fullName: zod.string().nullish(),
+  university: zod.string().nullish(),
+  department: zod.string().nullish(),
+  yearOfStudy: zod.string().nullish(),
+  profileCompleted: zod.boolean(),
   createdAt: zod.coerce.date(),
 });
 

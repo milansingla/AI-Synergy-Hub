@@ -2,7 +2,7 @@ import { Router } from "express";
 import { getAuth } from "@clerk/express";
 import { db, usersTable, invitesTable, accessCodesTable } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
-import { UpdateUserProfileBody } from "@workspace/api-zod";
+import { UpdateUserProfileBody, CompleteProfileBody } from "@workspace/api-zod";
 
 const router = Router();
 
@@ -13,6 +13,20 @@ const requireAuth = (req: any, res: any, next: any) => {
   req.userId = userId;
   next();
 };
+
+function serializeUser(user: any) {
+  return {
+    id: user.id,
+    email: user.email,
+    role: user.role,
+    fullName: user.fullName ?? null,
+    university: user.university ?? null,
+    department: user.department ?? null,
+    yearOfStudy: user.yearOfStudy ?? null,
+    profileCompleted: user.profileCompleted ?? false,
+    createdAt: user.createdAt,
+  };
+}
 
 // GET /api/users/profile
 router.get("/users/profile", requireAuth, async (req: any, res: any) => {
@@ -46,19 +60,14 @@ router.get("/users/profile", requireAuth, async (req: any, res: any) => {
 
     if (!user) return res.status(404).json({ error: "User not found" });
 
-    res.json({
-      id: user.id,
-      email: user.email,
-      role: user.role,
-      createdAt: user.createdAt,
-    });
+    res.json(serializeUser(user));
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Internal server error" });
   }
 });
 
-// PUT /api/users/profile
+// PUT /api/users/profile — admin-only role change
 router.put("/users/profile", requireAuth, async (req: any, res: any) => {
   try {
     const userId = req.userId as string;
@@ -80,12 +89,37 @@ router.put("/users/profile", requireAuth, async (req: any, res: any) => {
 
     if (!updated) return res.status(404).json({ error: "User not found" });
 
-    res.json({
-      id: updated.id,
-      email: updated.email,
-      role: updated.role,
-      createdAt: updated.createdAt,
-    });
+    res.json(serializeUser(updated));
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// PUT /api/users/profile/complete — set profile info and mark complete
+router.put("/users/profile/complete", requireAuth, async (req: any, res: any) => {
+  try {
+    const userId = req.userId as string;
+    const parsed = CompleteProfileBody.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: "fullName and university are required" });
+    }
+
+    const [updated] = await db
+      .update(usersTable)
+      .set({
+        fullName: parsed.data.fullName.trim(),
+        university: parsed.data.university.trim(),
+        department: parsed.data.department?.trim() ?? null,
+        yearOfStudy: parsed.data.yearOfStudy?.trim() ?? null,
+        profileCompleted: true,
+      })
+      .where(eq(usersTable.id, userId))
+      .returning();
+
+    if (!updated) return res.status(404).json({ error: "User not found" });
+
+    res.json(serializeUser(updated));
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Internal server error" });
@@ -126,12 +160,7 @@ router.post("/users/redeem-code", requireAuth, async (req: any, res: any) => {
       .set({ usedCount: sql`${accessCodesTable.usedCount} + 1` })
       .where(eq(accessCodesTable.id, accessCode.id));
 
-    res.json({
-      id: updated.id,
-      email: updated.email,
-      role: updated.role,
-      createdAt: updated.createdAt,
-    });
+    res.json(serializeUser(updated));
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Internal server error" });

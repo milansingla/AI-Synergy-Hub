@@ -16,6 +16,7 @@ export * from "./adminUpdateUserRoleBodyRole";
 export * from "./adminUser";
 export * from "./aIMessage";
 export * from "./apiError";
+export * from "./completeProfileBody";
 export * from "./createAccessCodeBody";
 export * from "./createAccessCodeBodyRole";
 export * from "./createInterviewBody";

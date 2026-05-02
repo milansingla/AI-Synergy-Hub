@@ -222,6 +222,31 @@ paths:
               schema:
                 $ref: "#/components/schemas/UserProfile"
 
+  /users/profile/complete:
+    put:
+      operationId: completeUserProfile
+      tags: [users]
+      summary: Complete the user's profile (name, university, etc.)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompleteProfileBody"
+      responses:
+        "200":
+          description: Profile completed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
   /users/redeem-code:
     post:
       operationId: redeemAccessCode
@@ -814,6 +839,20 @@ components:
         role:
           type: string
           enum: [student, admin, facility]
+        fullName:
+          type: string
+          nullable: true
+        university:
+          type: string
+          nullable: true
+        department:
+          type: string
+          nullable: true
+        yearOfStudy:
+          type: string
+          nullable: true
+        profileCompleted:
+          type: boolean
         createdAt:
           type: string
           format: date-time
@@ -821,6 +860,7 @@ components:
         - id
         - email
         - role
+        - profileCompleted
         - createdAt
 
     UpdateUserProfileBody:
@@ -831,6 +871,21 @@ components:
           enum: [student, admin, facility]
       required:
         - role
+
+    CompleteProfileBody:
+      type: object
+      properties:
+        fullName:
+          type: string
+        university:
+          type: string
+        department:
+          type: string
+        yearOfStudy:
+          type: string
+      required:
+        - fullName
+        - university
 
     AdminUser:
       type: object

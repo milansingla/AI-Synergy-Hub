@@ -11,5 +11,10 @@ export interface UserProfile {
   id: string;
   email: string;
   role: UserProfileRole;
+  fullName?: string | null;
+  university?: string | null;
+  department?: string | null;
+  yearOfStudy?: string | null;
+  profileCompleted: boolean;
   createdAt: Date;
 }
