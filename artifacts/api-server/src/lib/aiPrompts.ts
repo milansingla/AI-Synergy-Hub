@@ -35,7 +35,7 @@ export interface FullEvaluation {
 
 export async function parseJD(jdText: string): Promise<ParsedJD> {
   const response = await openai.chat.completions.create({
-    model: "gpt-5.4",
+    model: "gpt-4o",
     max_completion_tokens: 1024,
     messages: [
       {
@@ -67,7 +67,7 @@ Return only valid JSON, no markdown, no code blocks.`,
 
 export async function generateQuestions(parsedJD: ParsedJD): Promise<QuestionSet> {
   const response = await openai.chat.completions.create({
-    model: "gpt-5.4",
+    model: "gpt-4o",
     max_completion_tokens: 2048,
     messages: [
       {
@@ -142,7 +142,7 @@ Currently on question ${answeredCount + 1} of ${totalQuestions}.`;
   }));
 
   const response = await openai.chat.completions.create({
-    model: "gpt-5.4",
+    model: "gpt-4o",
     max_completion_tokens: 512,
     messages: [
       { role: "system", content: systemPrompt },
@@ -180,7 +180,7 @@ export async function evaluateInterview(
     .join("\n\n");
 
   const response = await openai.chat.completions.create({
-    model: "gpt-5.4",
+    model: "gpt-4o",
     max_completion_tokens: 4096,
     messages: [
       {

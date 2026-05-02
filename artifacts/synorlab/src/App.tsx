@@ -42,8 +42,18 @@ function AppRoutes() {
           <SignIn routing="path" path="/sign-in" />
         </div>
       </Route>
+      <Route path="/sign-in/:rest*">
+        <div className="min-h-screen flex items-center justify-center bg-background p-4">
+          <SignIn routing="path" path="/sign-in" />
+        </div>
+      </Route>
 
       <Route path="/sign-up">
+        <div className="min-h-screen flex items-center justify-center bg-background p-4">
+          <SignUp routing="path" path="/sign-up" />
+        </div>
+      </Route>
+      <Route path="/sign-up/:rest*">
         <div className="min-h-screen flex items-center justify-center bg-background p-4">
           <SignUp routing="path" path="/sign-up" />
         </div>
