@@ -21,7 +21,7 @@ const queryClient = new QueryClient();
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isSignedIn, isLoaded } = useAuth();
-  const { data: profile, isLoading: profileLoading } = useGetUserProfile({ query: { enabled: !!isSignedIn } });
+  const { data: profile, isLoading: profileLoading } = useGetUserProfile();
   const [, navigate] = useLocation();
 
   if (!isLoaded || (isSignedIn && profileLoading)) {
@@ -157,7 +157,7 @@ function AppRoutes() {
 
 function ProfileSetupRoute() {
   const { isSignedIn, isLoaded } = useAuth();
-  const { data: profile, isLoading: profileLoading } = useGetUserProfile({ query: { enabled: !!isSignedIn } });
+  const { data: profile, isLoading: profileLoading } = useGetUserProfile();
   const [, navigate] = useLocation();
 
   if (!isLoaded || (isSignedIn && profileLoading)) {
