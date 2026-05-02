@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useUploadJD, useCreateInterview } from "@workspace/api-client-react";
+import { useUploadJD, useCreateInterview } from "@/hooks/api";
 import { AppLayout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,7 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Zap, ArrowRight, Briefcase, Layers, BarChart2, Building2, ListChecks } from "lucide-react";
-import type { ParsedJD } from "@workspace/api-client-react";
+import type { ParsedJD } from "@/hooks/api";
 
 const schema = z.object({
   text: z.string().min(50, "Paste the full job description (at least 50 characters)"),

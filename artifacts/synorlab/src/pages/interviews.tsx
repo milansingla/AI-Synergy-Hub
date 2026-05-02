@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { useListInterviews } from "@workspace/api-client-react";
+import { useListInterviews } from "@/hooks/api";
 import { AppLayout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";

@@ -15,7 +15,7 @@ import {
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useGetUserProfile } from "@workspace/api-client-react";
+import { useGetUserProfile } from "@/hooks/api";
 
 type NavItem = { path: string; label: string; icon: React.ElementType };
 

@@ -1,5 +1,5 @@
 import { useParams, Link, useLocation } from "wouter";
-import { useGetInterview, useCompleteInterview } from "@workspace/api-client-react";
+import { useGetInterview, useCompleteInterview } from "@/hooks/api";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { AppLayout } from "@/components/layout";

@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ClerkProvider, RedirectToSignIn, useAuth, SignIn, SignUp } from "@clerk/react";
-import { useGetUserProfile } from "@workspace/api-client-react";
+import { useGetUserProfile } from "@/hooks/api";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
 import Dashboard from "@/pages/dashboard";
@@ -178,7 +178,6 @@ function ClerkWrappedApp() {
       publishableKey={import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || ""}
       routerPush={(to) => navigate(to)}
       routerReplace={(to) => navigate(to, { replace: true })}
-      {...(import.meta.env.PROD ? { proxyUrl: "/api/__clerk" } : {})}
       appearance={{
         variables: {
           colorPrimary: "#00AC9A",

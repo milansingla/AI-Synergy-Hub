@@ -19,7 +19,8 @@ import {
   getListAllInterviewsQueryKey,
   getListInvitesQueryKey,
   getListAccessCodesQueryKey,
-} from "@workspace/api-client-react";
+} from "@/hooks/api";
+import { getSupabase } from "@/lib/supabase";
 import { AppLayout } from "@/components/layout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -562,21 +563,13 @@ function BulkCSVSection() {
     if (validRows.length === 0) return;
     setUploading(true);
     try {
-      const token = await getToken();
-      const resp = await fetch("/api/admin/bulk-invite", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ invites: validRows.map((r) => ({ email: r.email, role: r.role })) }),
+      const token = await getToken({ template: "supabase" });
+      const sb = getSupabase(token);
+      const { data, error } = await sb.rpc("admin_bulk_invite", {
+        p_invites: validRows.map((r) => ({ email: r.email, role: r.role })),
       });
-      if (!resp.ok) {
-        const err = await resp.json().catch(() => ({ error: "Upload failed" }));
-        throw new Error(err.error ?? "Upload failed");
-      }
-      const data = await resp.json();
-      setResult(data);
+      if (error) throw new Error(error.message);
+      setResult(data as { created: number; skipped: number; errors: string[] });
       await queryClient.invalidateQueries({ queryKey: getListInvitesQueryKey() });
       toast({
         title: `Upload complete — ${data.created} invited`,

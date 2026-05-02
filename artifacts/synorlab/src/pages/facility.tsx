@@ -2,7 +2,7 @@ import { useState } from "react";
 import {
   useListFacilityStudents,
   useGetFacilityStats,
-} from "@workspace/api-client-react";
+} from "@/hooks/api";
 import { AppLayout } from "@/components/layout";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";

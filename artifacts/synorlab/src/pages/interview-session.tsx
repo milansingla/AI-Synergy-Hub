@@ -6,7 +6,7 @@ import {
   useCompleteInterview,
   getListInterviewsQueryKey,
   getGetInterviewStatsQueryKey,
-} from "@workspace/api-client-react";
+} from "@/hooks/api";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Mic, MicOff, Volume2, AlertTriangle, CheckCircle2, Loader2, Home, XCircle, Building2 } from "lucide-react";

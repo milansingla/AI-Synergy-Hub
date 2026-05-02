@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useCompleteUserProfile, getGetUserProfileQueryKey } from "@workspace/api-client-react";
+import { useCompleteUserProfile, getGetUserProfileQueryKey } from "@/hooks/api";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

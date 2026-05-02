@@ -4,7 +4,7 @@ import {
   useRedeemAccessCode,
   useCompleteUserProfile,
   getGetUserProfileQueryKey,
-} from "@workspace/api-client-react";
+} from "@/hooks/api";
 import { useQueryClient } from "@tanstack/react-query";
 import { AppLayout } from "@/components/layout";
 import { Button } from "@/components/ui/button";

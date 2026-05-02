@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { useGetInterviewStats } from "@workspace/api-client-react";
+import { useGetInterviewStats } from "@/hooks/api";
 import { AppLayout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
