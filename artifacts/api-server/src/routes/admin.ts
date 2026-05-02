@@ -281,4 +281,58 @@ router.delete("/admin/access-codes/:id", requireAdmin, async (req: any, res: any
   }
 });
 
+// ── Bulk invite ─────────────────────────────────────────────────────────────
+
+// POST /api/admin/bulk-invite
+router.post("/admin/bulk-invite", requireAdmin, async (req: any, res: any) => {
+  try {
+    const { invites } = req.body;
+    if (!Array.isArray(invites) || invites.length === 0) {
+      return res.status(400).json({ error: "invites must be a non-empty array" });
+    }
+    if (invites.length > 500) {
+      return res.status(400).json({ error: "Maximum 500 entries per upload" });
+    }
+
+    let created = 0;
+    let skipped = 0;
+    const errors: string[] = [];
+
+    for (const entry of invites) {
+      const email = typeof entry.email === "string" ? entry.email.toLowerCase().trim() : "";
+      const role = typeof entry.role === "string" ? entry.role.toLowerCase().trim() : "";
+
+      if (!email || !email.includes("@") || !email.includes(".")) {
+        errors.push(`Invalid email: "${entry.email}"`);
+        continue;
+      }
+      if (!["student", "facility"].includes(role)) {
+        errors.push(`Invalid role for ${email}: must be "student" or "facility"`);
+        continue;
+      }
+
+      try {
+        const token = randomBytes(16).toString("hex");
+        const result = await db
+          .insert(invitesTable)
+          .values({ email, role, token })
+          .onConflictDoNothing()
+          .returning();
+        if (result.length > 0) {
+          created++;
+        } else {
+          skipped++;
+        }
+      } catch {
+        skipped++;
+      }
+    }
+
+    res.json({ created, skipped, errors });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 export default router;

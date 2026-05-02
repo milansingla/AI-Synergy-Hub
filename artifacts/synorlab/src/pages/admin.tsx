@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@clerk/react";
 import {
   useListAllUsers,
   useGetAdminStats,
@@ -58,7 +59,10 @@ import {
   UserCheck,
   Plus,
   Copy,
-  ToggleLeft,
+  Upload,
+  FileText,
+  AlertCircle,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -67,10 +71,14 @@ type Tab = "overview" | "users" | "interviews" | "access";
 function ScorePill({ score }: { score: number | null | undefined }) {
   if (score == null) return <span className="text-xs text-muted-foreground font-mono">—</span>;
   const color =
-    score >= 80
+    score >= 85
       ? "text-green-400 bg-green-400/10 border-green-400/20"
-      : score >= 60
+      : score >= 70
+      ? "text-emerald-400 bg-emerald-400/10 border-emerald-400/20"
+      : score >= 55
       ? "text-yellow-400 bg-yellow-400/10 border-yellow-400/20"
+      : score >= 38
+      ? "text-orange-400 bg-orange-400/10 border-orange-400/20"
       : "text-red-400 bg-red-400/10 border-red-400/20";
   return (
     <span className={cn("text-xs font-mono font-semibold border rounded px-1.5 py-0.5", color)}>
@@ -484,9 +492,266 @@ function InterviewsTab() {
   );
 }
 
-/* ─── Access tab — 3 grant methods ─────────────────────────────────────── */
+/* ─── Bulk CSV Section ──────────────────────────────────────────────────── */
 
-type AccessMethod = "role" | "invite" | "code";
+interface ParsedRow { email: string; role: string; valid: boolean; error?: string }
+
+function parseCSV(text: string): ParsedRow[] {
+  const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  if (lines.length === 0) return [];
+
+  // Detect header row
+  const firstLower = lines[0].toLowerCase();
+  const hasHeader = firstLower.includes("email") || firstLower.includes("role");
+  const dataLines = hasHeader ? lines.slice(1) : lines;
+
+  return dataLines.map((line) => {
+    const cols = line.split(",").map((c) => c.trim().replace(/^["']|["']$/g, ""));
+    const email = (cols[0] ?? "").toLowerCase();
+    const role = (cols[1] ?? "").toLowerCase();
+
+    if (!email || !email.includes("@") || !email.includes(".")) {
+      return { email, role, valid: false, error: "Invalid email" };
+    }
+    if (!["student", "facility"].includes(role)) {
+      return { email, role, valid: false, error: `Role must be "student" or "facility" — got "${role || "(empty)"}"` };
+    }
+    return { email, role, valid: true };
+  });
+}
+
+function BulkCSVSection() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const { getToken } = useAuth();
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const [rows, setRows] = useState<ParsedRow[]>([]);
+  const [fileName, setFileName] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [result, setResult] = useState<{ created: number; skipped: number; errors: string[] } | null>(null);
+
+  const handleFile = (file: File) => {
+    setFileName(file.name);
+    setResult(null);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result as string;
+      setRows(parseCSV(text));
+    };
+    reader.readAsText(file);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file) handleFile(file);
+  };
+
+  const clearFile = () => {
+    setRows([]);
+    setFileName("");
+    setResult(null);
+    if (fileRef.current) fileRef.current.value = "";
+  };
+
+  const validRows = rows.filter((r) => r.valid);
+  const invalidRows = rows.filter((r) => !r.valid);
+
+  const handleUpload = async () => {
+    if (validRows.length === 0) return;
+    setUploading(true);
+    try {
+      const token = await getToken();
+      const resp = await fetch("/api/admin/bulk-invite", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ invites: validRows.map((r) => ({ email: r.email, role: r.role })) }),
+      });
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({ error: "Upload failed" }));
+        throw new Error(err.error ?? "Upload failed");
+      }
+      const data = await resp.json();
+      setResult(data);
+      await queryClient.invalidateQueries({ queryKey: getListInvitesQueryKey() });
+      toast({
+        title: `Upload complete — ${data.created} invited`,
+        description: data.skipped > 0 ? `${data.skipped} skipped (already exist)` : undefined,
+      });
+      clearFile();
+    } catch (e: any) {
+      toast({ title: e.message ?? "Upload failed", variant: "destructive" });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Instructions */}
+      <div className="rounded-xl border border-border bg-card p-5">
+        <div className="flex items-center gap-2 mb-3">
+          <Upload size={14} className="text-primary" />
+          <h3 className="text-sm font-semibold">Bulk CSV Upload</h3>
+        </div>
+        <p className="text-xs text-muted-foreground leading-relaxed mb-3">
+          Upload a <span className="font-mono text-foreground">.csv</span> file with two columns: <span className="font-mono text-foreground">email</span> and <span className="font-mono text-foreground">role</span>. Role must be <span className="font-mono text-violet-400">facility</span> or <span className="font-mono text-cyan-400">student</span>. An invite will be created for each valid row — when that person signs up, their role is automatically applied. Maximum 500 rows per upload.
+        </p>
+        <div className="bg-secondary/40 rounded-lg px-3 py-2 font-mono text-xs text-muted-foreground">
+          <p className="text-foreground/60 mb-1">Example format:</p>
+          <p>email,role</p>
+          <p>priya@college.edu,facility</p>
+          <p>rahul@college.edu,student</p>
+          <p>neha@college.edu,student</p>
+        </div>
+      </div>
+
+      {/* Drop zone */}
+      <div
+        className={cn(
+          "rounded-xl border-2 border-dashed bg-card transition-colors",
+          fileName ? "border-primary/40" : "border-border hover:border-primary/40"
+        )}
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={handleDrop}
+      >
+        {!fileName ? (
+          <div className="flex flex-col items-center justify-center gap-3 py-10 px-6 text-center">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+              <FileText size={18} className="text-primary" />
+            </div>
+            <div>
+              <p className="text-sm font-medium">Drop your CSV here</p>
+              <p className="text-xs text-muted-foreground mt-0.5">or click to browse</p>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => fileRef.current?.click()}
+              className="gap-1.5"
+            >
+              <Upload size={13} /> Browse file
+            </Button>
+            <input
+              ref={fileRef}
+              type="file"
+              accept=".csv,text/csv"
+              className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
+            />
+          </div>
+        ) : (
+          <div className="px-5 py-4 flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+              <FileText size={14} className="text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium truncate">{fileName}</p>
+              <p className="text-xs text-muted-foreground font-mono">
+                {rows.length} rows parsed · {validRows.length} valid · {invalidRows.length} errors
+              </p>
+            </div>
+            <button onClick={clearFile} className="p-1.5 text-muted-foreground hover:text-foreground">
+              <X size={14} />
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Preview table */}
+      {rows.length > 0 && (
+        <div className="rounded-xl border border-border bg-card overflow-hidden">
+          <div className="px-5 py-3 border-b border-border flex items-center gap-2">
+            <h3 className="text-sm font-semibold">Preview</h3>
+            <span className="ml-auto text-xs font-mono text-muted-foreground">
+              {validRows.length} valid / {invalidRows.length} invalid
+            </span>
+          </div>
+          <div className="max-h-64 overflow-y-auto divide-y divide-border">
+            {rows.map((row, i) => (
+              <div key={i} className={cn("flex items-center gap-3 px-5 py-2.5", !row.valid && "bg-red-500/5")}>
+                <div className="flex-1 min-w-0">
+                  <p className={cn("text-xs font-mono truncate", row.valid ? "text-foreground" : "text-red-400")}>
+                    {row.email || "(empty)"}
+                  </p>
+                  {row.error && (
+                    <p className="text-[10px] text-red-400 flex items-center gap-1 mt-0.5">
+                      <AlertCircle size={9} /> {row.error}
+                    </p>
+                  )}
+                </div>
+                {row.valid ? (
+                  <span className={cn(
+                    "text-[10px] font-mono font-semibold border rounded px-1.5 py-0.5",
+                    row.role === "facility"
+                      ? "bg-violet-500/15 text-violet-400 border-violet-500/20"
+                      : "bg-cyan-500/15 text-cyan-400 border-cyan-500/20"
+                  )}>
+                    {row.role}
+                  </span>
+                ) : (
+                  <span className="text-[10px] text-red-400 font-mono border border-red-400/20 rounded px-1.5 py-0.5">
+                    error
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+          {invalidRows.length > 0 && (
+            <div className="px-5 py-2.5 border-t border-border bg-red-500/5 flex items-center gap-2 text-xs text-red-400">
+              <AlertCircle size={12} />
+              {invalidRows.length} row{invalidRows.length !== 1 ? "s" : ""} with errors will be skipped
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Upload button */}
+      {validRows.length > 0 && (
+        <div className="flex items-center gap-3">
+          <Button onClick={handleUpload} disabled={uploading} className="gap-2">
+            {uploading ? (
+              <><span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Uploading…</>
+            ) : (
+              <><Upload size={13} /> Upload {validRows.length} invite{validRows.length !== 1 ? "s" : ""}</>
+            )}
+          </Button>
+          <p className="text-xs text-muted-foreground">
+            {invalidRows.length > 0 && `${invalidRows.length} invalid row${invalidRows.length !== 1 ? "s" : ""} will be skipped · `}
+            Existing invites for the same email will be skipped automatically
+          </p>
+        </div>
+      )}
+
+      {/* Result banner */}
+      {result && (
+        <div className="rounded-xl border border-green-500/20 bg-green-500/5 p-4 flex items-start gap-3">
+          <CheckCircle2 size={16} className="text-green-400 shrink-0 mt-0.5" />
+          <div className="text-sm space-y-1">
+            <p className="font-semibold text-green-400">{result.created} invite{result.created !== 1 ? "s" : ""} created successfully</p>
+            {result.skipped > 0 && (
+              <p className="text-xs text-muted-foreground">{result.skipped} skipped (already had a pending invite)</p>
+            )}
+            {result.errors.length > 0 && (
+              <ul className="text-xs text-red-400 mt-1 space-y-0.5">
+                {result.errors.slice(0, 5).map((e, i) => <li key={i}>• {e}</li>)}
+                {result.errors.length > 5 && <li>…and {result.errors.length - 5} more</li>}
+              </ul>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── Access tab — 4 grant methods ─────────────────────────────────────── */
+
+type AccessMethod = "role" | "invite" | "code" | "csv";
 
 function AccessTab() {
   const [method, setMethod] = useState<AccessMethod>("role");
@@ -496,25 +761,31 @@ function AccessTab() {
       {/* Method selector */}
       <div className="rounded-xl border border-border bg-card p-5">
         <h2 className="text-sm font-semibold mb-4">Grant access method</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {[
             {
               id: "role" as const,
               icon: UserCheck,
               title: "Role Assignment",
-              desc: "Directly change a registered user's role from the Users tab",
+              desc: "Change a registered user's role directly from the Users tab",
             },
             {
               id: "invite" as const,
               icon: Mail,
               title: "Email Invite",
-              desc: "Pre-register an email address with a role — applied on first sign-up",
+              desc: "Pre-register an email — role applied automatically on first sign-up",
             },
             {
               id: "code" as const,
               icon: KeyRound,
               title: "Access Code",
-              desc: "Generate a shareable code — users enter it in Settings to upgrade their role",
+              desc: "Generate a shareable code — users redeem it in Settings",
+            },
+            {
+              id: "csv" as const,
+              icon: Upload,
+              title: "Bulk CSV Upload",
+              desc: "Upload a CSV to invite many students or teachers at once",
             },
           ].map(({ id, icon: Icon, title, desc }) => (
             <button
@@ -540,6 +811,7 @@ function AccessTab() {
       {method === "role" && <RoleAssignInfo />}
       {method === "invite" && <InviteSection />}
       {method === "code" && <AccessCodeSection />}
+      {method === "csv" && <BulkCSVSection />}
     </div>
   );
 }

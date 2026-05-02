@@ -65,6 +65,13 @@ router.put("/users/profile", requireAuth, async (req: any, res: any) => {
     const parsed = UpdateUserProfileBody.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: "Invalid request body" });
 
+    const currentUser = await db.query.usersTable.findFirst({ where: eq(usersTable.id, userId) });
+    if (!currentUser) return res.status(404).json({ error: "User not found" });
+
+    if (currentUser.role !== "admin") {
+      return res.status(403).json({ error: "Only admins can change roles. Ask your administrator or use an access code." });
+    }
+
     const [updated] = await db
       .update(usersTable)
       .set({ role: parsed.data.role })
