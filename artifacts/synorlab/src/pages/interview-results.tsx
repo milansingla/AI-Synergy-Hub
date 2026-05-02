@@ -60,8 +60,8 @@ function ScoreRing({ score }: { score: number }) {
 
 /* ─── Criteria bar ──────────────────────────────────────────────────────────── */
 function CriteriaBar({ dimension, score, weight, feedback }: { dimension: string; score: number; weight: number; feedback: string }) {
-  const color = score >= 80 ? "bg-green-500" : score >= 60 ? "bg-yellow-500" : score >= 40 ? "bg-orange-500" : "bg-red-500";
-  const textColor = score >= 80 ? "text-green-400" : score >= 60 ? "text-yellow-400" : score >= 40 ? "text-orange-400" : "text-red-400";
+  const color = score >= 85 ? "bg-green-500" : score >= 70 ? "bg-emerald-500" : score >= 55 ? "bg-yellow-500" : score >= 38 ? "bg-orange-500" : "bg-red-500";
+  const textColor = score >= 85 ? "text-green-400" : score >= 70 ? "text-emerald-400" : score >= 55 ? "text-yellow-400" : score >= 38 ? "text-orange-400" : "text-red-400";
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between gap-3">
@@ -165,13 +165,29 @@ export default function InterviewResults() {
         ) : (
           <div className="space-y-6">
             {/* Hero score card */}
-            <div className="rounded-xl border border-border bg-card p-6 flex items-start gap-8">
-              <ScoreRing score={evaluation.overallScore} />
-              <div className="flex-1 min-w-0">
-                <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium mb-1">Overall Score · Weighted Assessment</p>
-                <p className="text-sm leading-relaxed text-foreground" data-testid="text-feedback">{evaluation.feedback}</p>
-              </div>
-            </div>
+            {(() => {
+              const verdict = verdictFromScore(evaluation.overallScore);
+              const hiringVerdict = (evaluation as any).hiringVerdict as string | undefined;
+              const displayVerdict = hiringVerdict ?? verdict.label;
+              return (
+                <div className="rounded-xl border bg-card overflow-hidden" style={{ borderColor: verdict.border }}>
+                  <div className="px-5 py-2.5 flex items-center gap-2 border-b" style={{ backgroundColor: verdict.bg, borderColor: verdict.border }}>
+                    <span className="text-xs font-bold uppercase tracking-widest" style={{ color: verdict.color }}>Hiring Recommendation</span>
+                    <span className="ml-auto text-xs font-semibold px-2.5 py-0.5 rounded-full border font-mono" style={{ color: verdict.color, borderColor: verdict.border, backgroundColor: "transparent" }}>
+                      {displayVerdict}
+                    </span>
+                  </div>
+                  <div className="p-6 flex items-start gap-6 md:gap-8">
+                    <ScoreRing score={evaluation.overallScore} />
+                    <div className="flex-1 min-w-0 space-y-2">
+                      <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Overall Score · Weighted Assessment</p>
+                      <p className="text-sm leading-relaxed text-foreground" data-testid="text-feedback">{evaluation.feedback}</p>
+                      <p className="text-xs font-medium mt-1" style={{ color: verdict.color }}>{verdict.description}</p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* 6-Dimension criteria */}
             {criteriaScores.length > 0 && (
@@ -240,9 +256,10 @@ export default function InterviewResults() {
                         <Badge
                           variant="secondary"
                           className={cn("font-mono text-xs shrink-0",
-                            qe.score >= 80 ? "bg-green-400/10 text-green-400 border-green-400/20"
-                            : qe.score >= 60 ? "bg-yellow-400/10 text-yellow-400 border-yellow-400/20"
-                            : qe.score >= 40 ? "bg-orange-400/10 text-orange-400 border-orange-400/20"
+                            qe.score >= 85 ? "bg-green-400/10 text-green-400 border-green-400/20"
+                            : qe.score >= 70 ? "bg-emerald-400/10 text-emerald-400 border-emerald-400/20"
+                            : qe.score >= 55 ? "bg-yellow-400/10 text-yellow-400 border-yellow-400/20"
+                            : qe.score >= 38 ? "bg-orange-400/10 text-orange-400 border-orange-400/20"
                             : "bg-red-400/10 text-red-400 border-red-400/20"
                           )}
                         >

@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 
 function ScoreBadge({ score }: { score: number | null | undefined }) {
   if (score === null || score === undefined) return <span className="text-xs text-muted-foreground font-mono">—</span>;
-  const color = score >= 80 ? "text-green-400" : score >= 60 ? "text-yellow-400" : "text-red-400";
+  const color = score >= 85 ? "text-green-400" : score >= 70 ? "text-emerald-400" : score >= 55 ? "text-yellow-400" : score >= 38 ? "text-orange-400" : "text-red-400";
   return <span className={cn("text-xs font-mono font-semibold", color)}>{score}%</span>;
 }
 

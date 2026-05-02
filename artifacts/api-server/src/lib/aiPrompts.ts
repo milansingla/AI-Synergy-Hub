@@ -28,6 +28,7 @@ export interface CriteriaScore {
 
 export interface FullEvaluation {
   overallScore: number;
+  hiringVerdict: "Strong Hire" | "Hire" | "Hold" | "Weak" | "No Hire";
   feedback: string;
   strengths: string[];
   improvements: string[];
@@ -417,6 +418,7 @@ Return only valid JSON, no markdown, no code blocks.`,
   } catch {
     return {
       overallScore: 0,
+      hiringVerdict: "No Hire" as const,
       feedback: "Unable to generate evaluation.",
       strengths: [],
       improvements: [],
