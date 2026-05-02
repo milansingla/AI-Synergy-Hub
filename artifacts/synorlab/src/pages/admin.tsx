@@ -1,6 +1,5 @@
 import { useState, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "@clerk/react";
 import {
   useListAllUsers,
   useGetAdminStats,
@@ -14,13 +13,13 @@ import {
   useListAccessCodes,
   useCreateAccessCode,
   useDeleteAccessCode,
+  useBulkInvite,
   getListAllUsersQueryKey,
   getGetAdminStatsQueryKey,
   getListAllInterviewsQueryKey,
   getListInvitesQueryKey,
   getListAccessCodesQueryKey,
 } from "@/hooks/api";
-import { getSupabase } from "@/lib/supabase";
 import { AppLayout } from "@/components/layout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -523,13 +522,11 @@ function parseCSV(text: string): ParsedRow[] {
 
 function BulkCSVSection() {
   const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const { getToken } = useAuth();
   const fileRef = useRef<HTMLInputElement>(null);
+  const bulkInvite = useBulkInvite();
 
   const [rows, setRows] = useState<ParsedRow[]>([]);
   const [fileName, setFileName] = useState("");
-  const [uploading, setUploading] = useState(false);
   const [result, setResult] = useState<{ created: number; skipped: number; errors: string[] } | null>(null);
 
   const handleFile = (file: File) => {
@@ -561,16 +558,11 @@ function BulkCSVSection() {
 
   const handleUpload = async () => {
     if (validRows.length === 0) return;
-    setUploading(true);
     try {
-      const token = await getToken({ template: "supabase" });
-      const sb = getSupabase(token);
-      const { data, error } = await sb.rpc("admin_bulk_invite", {
-        p_invites: validRows.map((r) => ({ email: r.email, role: r.role })),
+      const data = await bulkInvite.mutateAsync({
+        invites: validRows.map((r) => ({ email: r.email, role: r.role })),
       });
-      if (error) throw new Error(error.message);
-      setResult(data as { created: number; skipped: number; errors: string[] });
-      await queryClient.invalidateQueries({ queryKey: getListInvitesQueryKey() });
+      setResult(data);
       toast({
         title: `Upload complete — ${data.created} invited`,
         description: data.skipped > 0 ? `${data.skipped} skipped (already exist)` : undefined,
@@ -578,8 +570,6 @@ function BulkCSVSection() {
       clearFile();
     } catch (e: any) {
       toast({ title: e.message ?? "Upload failed", variant: "destructive" });
-    } finally {
-      setUploading(false);
     }
   };
 
@@ -706,8 +696,8 @@ function BulkCSVSection() {
       {/* Upload button */}
       {validRows.length > 0 && (
         <div className="flex items-center gap-3">
-          <Button onClick={handleUpload} disabled={uploading} className="gap-2">
-            {uploading ? (
+          <Button onClick={handleUpload} disabled={bulkInvite.isPending} className="gap-2">
+            {bulkInvite.isPending ? (
               <><span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Uploading…</>
             ) : (
               <><Upload size={13} /> Upload {validRows.length} invite{validRows.length !== 1 ? "s" : ""}</>
