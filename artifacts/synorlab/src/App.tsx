@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ClerkProvider, RedirectToSignIn, useAuth } from "@clerk/react";
+import { dark } from "@clerk/themes";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
 import Dashboard from "@/pages/dashboard";
@@ -91,12 +92,56 @@ function ClerkWrappedApp() {
       routerReplace={(to) => navigate(to, { replace: true })}
       {...(import.meta.env.PROD ? { proxyUrl: "/api/__clerk" } : {})}
       appearance={{
+        baseTheme: dark,
         variables: {
-          colorPrimary: "hsl(189, 100%, 50%)",
-          colorBackground: "hsl(216, 42%, 8%)",
-          colorInputBackground: "hsl(218, 35%, 15%)",
-          colorText: "hsl(210, 30%, 95%)",
-          borderRadius: "0.5rem",
+          colorPrimary: "#00d4ff",
+          colorBackground: "#111827",
+          colorInputBackground: "#1e2a3d",
+          colorText: "#f0f4f8",
+          colorTextSecondary: "#94a3b8",
+          colorNeutral: "#94a3b8",
+          colorInputText: "#f0f4f8",
+          colorShimmer: "#1e2a3d",
+          borderRadius: "0.6rem",
+          fontFamily: "'Plus Jakarta Sans', sans-serif",
+        },
+        elements: {
+          card: {
+            background: "#1a2234",
+            border: "1px solid #2a3a55",
+            boxShadow: "0 25px 50px rgba(0,0,0,0.5)",
+          },
+          headerTitle: { color: "#f0f4f8", fontWeight: "600" },
+          headerSubtitle: { color: "#94a3b8" },
+          socialButtonsBlockButton: {
+            background: "#1e2a3d",
+            border: "1px solid #2a3a55",
+            color: "#f0f4f8",
+          },
+          socialButtonsBlockButtonText: { color: "#f0f4f8" },
+          dividerLine: { background: "#2a3a55" },
+          dividerText: { color: "#64748b" },
+          formFieldLabel: { color: "#94a3b8" },
+          formFieldInput: {
+            background: "#1e2a3d",
+            border: "1px solid #2a3a55",
+            color: "#f0f4f8",
+          },
+          formButtonPrimary: {
+            background: "#00d4ff",
+            color: "#0a1628",
+            fontWeight: "600",
+          },
+          footerActionText: { color: "#64748b" },
+          footerActionLink: { color: "#00d4ff" },
+          identityPreviewText: { color: "#f0f4f8" },
+          identityPreviewEditButton: { color: "#00d4ff" },
+          formResendCodeLink: { color: "#00d4ff" },
+          otpCodeFieldInput: {
+            background: "#1e2a3d",
+            border: "1px solid #2a3a55",
+            color: "#f0f4f8",
+          },
         },
       }}
     >
