@@ -1,0 +1,230 @@
+Build a full-stack AI-powered web application called **"Synorlab Interviewer"**.
+
+## 🎯 PRODUCT OVERVIEW
+
+This is a B2B SaaS platform for universities where students can upload a job description (JD) and practice mock interviews with an AI interviewer.
+
+The system should:
+
+1. Parse the uploaded job description
+2. Generate interview questions based on the JD
+3. Conduct an interactive interview (chat-based)
+4. Evaluate answers and provide feedback + score
+
+---
+
+## 🧱 TECH STACK REQUIREMENTS
+
+### Frontend
+
+* Next.js (App Router)
+* Tailwind CSS
+* Clean, modern UI (minimal, professional)
+* Responsive design
+
+### Backend
+
+* Node.js with Express OR Next.js API routes
+* REST API structure
+
+### Database
+
+* PostgreSQL (use Prisma ORM)
+
+### AI Integration
+
+* OpenAI API (GPT-based)
+* Modular prompt structure (separate prompts for parsing, questioning, evaluation)
+
+---
+
+## 📦 CORE FEATURES
+
+### 1. Landing Page
+
+* Hero section: "AI Mock Interviews for Real Placements"
+* CTA: "Start Interview"
+* Sections:
+
+  * How it works
+  * Benefits for universities
+  * Demo preview (mock UI)
+
+---
+
+### 2. Authentication
+
+* Simple email + password login/signup
+* JWT-based auth
+* Role support:
+
+  * Student
+  * Admin
+
+---
+
+### 3. Dashboard (Student)
+
+* Upload Job Description (PDF or text input)
+* Button: "Start Interview"
+* Show past interviews
+
+---
+
+### 4. JD Processing
+
+When user uploads JD:
+
+* Extract:
+
+  * Role
+  * Skills
+  * Experience level
+* Store parsed data in DB
+
+---
+
+### 5. Interview Engine (CORE FEATURE)
+
+Create a chat interface:
+
+* AI asks one question at a time
+* User responds
+* Maintain conversation state
+
+#### AI SYSTEM PROMPT:
+
+"You are Synorlab Interviewer, a professional hiring manager conducting structured interviews. Ask one question at a time. Do not give answers. Adapt difficulty based on responses."
+
+---
+
+### 6. Question Generator
+
+Generate:
+
+* 5 technical questions
+* 3 behavioral questions
+* 2 situational questions
+
+---
+
+### 7. Evaluation Engine
+
+After each answer:
+Return:
+
+* Score (1–10)
+* Feedback
+* Ideal answer
+
+Display this after interview ends.
+
+---
+
+### 8. Admin Panel
+
+* View all users
+* Assign access (simulate B2B licensing)
+* View interview stats
+
+---
+
+## 🧠 AI PROMPT MODULES
+
+Create separate functions:
+
+1. parseJD(jdText)
+2. generateQuestions(parsedJD)
+3. evaluateAnswer(question, answer)
+
+Keep prompts modular and reusable.
+
+---
+
+## 🗄️ DATABASE SCHEMA (Prisma)
+
+User:
+
+* id
+* email
+* password
+* role
+
+Interview:
+
+* id
+* userId
+* jobDescription
+* parsedData (JSON)
+* createdAt
+
+Message:
+
+* id
+* interviewId
+* role (AI/User)
+* content
+
+Evaluation:
+
+* id
+* interviewId
+* score
+* feedback
+* idealAnswer
+
+---
+
+## 🎨 UI REQUIREMENTS
+
+* Chat UI similar to ChatGPT
+* Smooth scrolling
+* Typing indicator for AI
+* Clean dashboard cards
+* Minimal color palette (black/white/blue)
+
+---
+
+## ⚙️ API ROUTES
+
+* POST /api/auth/signup
+* POST /api/auth/login
+* POST /api/jd/upload
+* POST /api/interview/start
+* POST /api/interview/respond
+* GET /api/interview/:id
+* GET /api/admin/users
+
+---
+
+## 🔐 SECURITY
+
+* Hash passwords
+* Protect routes with middleware
+* Role-based access for admin
+
+---
+
+## 🚀 BONUS (if possible)
+
+* Add voice input (Web Speech API)
+* Add interview timer
+* Add progress bar
+
+---
+
+## 📁 OUTPUT REQUIREMENTS
+
+* Fully working codebase
+* Clear folder structure
+* .env example file
+* Instructions to run locally
+
+---
+
+## IMPORTANT
+
+* Do NOT generate pseudo code
+* Generate real working code
+* Ensure app runs without errors
+* Keep code modular and scalable

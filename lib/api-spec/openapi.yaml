@@ -3,13 +3,21 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Synorlab Interviewer API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: interviews
+    description: Interview management
+  - name: jd
+    description: Job description processing
+  - name: admin
+    description: Admin operations
+  - name: users
+    description: User profile operations
 paths:
   /healthz:
     get:
@@ -24,6 +32,222 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /jd/upload:
+    post:
+      operationId: uploadJD
+      tags: [jd]
+      summary: Upload and parse a job description
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UploadJDBody"
+      responses:
+        "201":
+          description: JD parsed and stored
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ParsedJD"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /interviews:
+    get:
+      operationId: listInterviews
+      tags: [interviews]
+      summary: List interviews for the current user
+      responses:
+        "200":
+          description: List of interviews
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/InterviewSummary"
+    post:
+      operationId: createInterview
+      tags: [interviews]
+      summary: Start a new interview session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateInterviewBody"
+      responses:
+        "201":
+          description: Interview created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Interview"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /interviews/{id}:
+    get:
+      operationId: getInterview
+      tags: [interviews]
+      summary: Get interview details with messages
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Interview with messages and evaluation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InterviewDetail"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /interviews/{id}/respond:
+    post:
+      operationId: respondToInterview
+      tags: [interviews]
+      summary: Send a user response to the AI interviewer
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RespondToInterviewBody"
+      responses:
+        "200":
+          description: AI response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AIMessage"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /interviews/{id}/complete:
+    post:
+      operationId: completeInterview
+      tags: [interviews]
+      summary: Mark an interview as complete and generate evaluation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Evaluation results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Evaluation"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /interviews/stats:
+    get:
+      operationId: getInterviewStats
+      tags: [interviews]
+      summary: Get aggregate interview stats for the current user
+      responses:
+        "200":
+          description: Stats summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InterviewStats"
+
+  /users/profile:
+    get:
+      operationId: getUserProfile
+      tags: [users]
+      summary: Get the current user's profile
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+    put:
+      operationId: updateUserProfile
+      tags: [users]
+      summary: Update user profile (role)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserProfileBody"
+      responses:
+        "200":
+          description: Updated user profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+
+  /admin/users:
+    get:
+      operationId: listAllUsers
+      tags: [admin]
+      summary: List all users (admin only)
+      responses:
+        "200":
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminUser"
+
+  /admin/stats:
+    get:
+      operationId: getAdminStats
+      tags: [admin]
+      summary: Get platform-wide stats (admin only)
+      responses:
+        "200":
+          description: Platform stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminStats"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +258,316 @@ components:
       required:
         - status
 
+    ApiError:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    UploadJDBody:
+      type: object
+      properties:
+        text:
+          type: string
+          description: Raw job description text
+      required:
+        - text
+
+    ParsedJD:
+      type: object
+      properties:
+        id:
+          type: integer
+        role:
+          type: string
+        skills:
+          type: array
+          items:
+            type: string
+        experienceLevel:
+          type: string
+        rawText:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - role
+        - skills
+        - experienceLevel
+        - rawText
+        - createdAt
+
+    CreateInterviewBody:
+      type: object
+      properties:
+        jdId:
+          type: integer
+          description: ID of the parsed job description
+      required:
+        - jdId
+
+    Interview:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: string
+        jdId:
+          type: integer
+        status:
+          type: string
+          enum: [in_progress, completed]
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - userId
+        - jdId
+        - status
+        - createdAt
+
+    InterviewSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+        jdId:
+          type: integer
+        role:
+          type: string
+        status:
+          type: string
+          enum: [in_progress, completed]
+        score:
+          type: number
+          nullable: true
+        messageCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - jdId
+        - role
+        - status
+        - messageCount
+        - createdAt
+
+    InterviewMessage:
+      type: object
+      properties:
+        id:
+          type: integer
+        role:
+          type: string
+          enum: [ai, user]
+        content:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - role
+        - content
+        - createdAt
+
+    InterviewDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        jdId:
+          type: integer
+        role:
+          type: string
+        status:
+          type: string
+          enum: [in_progress, completed]
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/InterviewMessage"
+        evaluation:
+          nullable: true
+          $ref: "#/components/schemas/Evaluation"
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - jdId
+        - role
+        - status
+        - messages
+        - createdAt
+
+    RespondToInterviewBody:
+      type: object
+      properties:
+        content:
+          type: string
+      required:
+        - content
+
+    AIMessage:
+      type: object
+      properties:
+        id:
+          type: integer
+        content:
+          type: string
+        isComplete:
+          type: boolean
+      required:
+        - id
+        - content
+        - isComplete
+
+    Evaluation:
+      type: object
+      properties:
+        id:
+          type: integer
+        interviewId:
+          type: integer
+        overallScore:
+          type: number
+        feedback:
+          type: string
+        strengths:
+          type: array
+          items:
+            type: string
+        improvements:
+          type: array
+          items:
+            type: string
+        questionEvals:
+          type: array
+          items:
+            $ref: "#/components/schemas/QuestionEvaluation"
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - interviewId
+        - overallScore
+        - feedback
+        - strengths
+        - improvements
+        - questionEvals
+        - createdAt
+
+    QuestionEvaluation:
+      type: object
+      properties:
+        question:
+          type: string
+        answer:
+          type: string
+        score:
+          type: number
+        feedback:
+          type: string
+        idealAnswer:
+          type: string
+      required:
+        - question
+        - answer
+        - score
+        - feedback
+        - idealAnswer
+
+    InterviewStats:
+      type: object
+      properties:
+        totalInterviews:
+          type: integer
+        completedInterviews:
+          type: integer
+        averageScore:
+          type: number
+        recentInterviews:
+          type: array
+          items:
+            $ref: "#/components/schemas/InterviewSummary"
+      required:
+        - totalInterviews
+        - completedInterviews
+        - averageScore
+        - recentInterviews
+
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+          enum: [student, admin]
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - email
+        - role
+        - createdAt
+
+    UpdateUserProfileBody:
+      type: object
+      properties:
+        role:
+          type: string
+          enum: [student, admin]
+      required:
+        - role
+
+    AdminUser:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+        totalInterviews:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - email
+        - role
+        - totalInterviews
+        - createdAt
+
+    AdminStats:
+      type: object
+      properties:
+        totalUsers:
+          type: integer
+        totalInterviews:
+          type: integer
+        completedInterviews:
+          type: integer
+        averageScore:
+          type: number
+      required:
+        - totalUsers
+        - totalInterviews
+        - completedInterviews
+        - averageScore
