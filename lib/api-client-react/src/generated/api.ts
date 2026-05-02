@@ -18,7 +18,9 @@ import type {
 
 import type {
   AIMessage,
+  AdminInterviewSummary,
   AdminStats,
+  AdminUpdateUserRoleBody,
   AdminUser,
   ApiError,
   CreateInterviewBody,
@@ -1010,3 +1012,333 @@ export function useGetAdminStats<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Update a user's role (admin only)
+ */
+export const getUpdateUserRoleUrl = (userId: string) => {
+  return `/api/admin/users/${userId}/role`;
+};
+
+export const updateUserRole = async (
+  userId: string,
+  adminUpdateUserRoleBody: AdminUpdateUserRoleBody,
+  options?: RequestInit,
+): Promise<AdminUser> => {
+  return customFetch<AdminUser>(getUpdateUserRoleUrl(userId), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(adminUpdateUserRoleBody),
+  });
+};
+
+export const getUpdateUserRoleMutationOptions = <
+  TError = ErrorType<ApiError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateUserRole>>,
+    TError,
+    { userId: string; data: BodyType<AdminUpdateUserRoleBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateUserRole>>,
+  TError,
+  { userId: string; data: BodyType<AdminUpdateUserRoleBody> },
+  TContext
+> => {
+  const mutationKey = ["updateUserRole"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateUserRole>>,
+    { userId: string; data: BodyType<AdminUpdateUserRoleBody> }
+  > = (props) => {
+    const { userId, data } = props ?? {};
+
+    return updateUserRole(userId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateUserRoleMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateUserRole>>
+>;
+export type UpdateUserRoleMutationBody = BodyType<AdminUpdateUserRoleBody>;
+export type UpdateUserRoleMutationError = ErrorType<ApiError>;
+
+/**
+ * @summary Update a user's role (admin only)
+ */
+export const useUpdateUserRole = <
+  TError = ErrorType<ApiError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateUserRole>>,
+    TError,
+    { userId: string; data: BodyType<AdminUpdateUserRoleBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateUserRole>>,
+  TError,
+  { userId: string; data: BodyType<AdminUpdateUserRoleBody> },
+  TContext
+> => {
+  return useMutation(getUpdateUserRoleMutationOptions(options));
+};
+
+/**
+ * @summary Delete a user and all their data (admin only)
+ */
+export const getDeleteUserUrl = (userId: string) => {
+  return `/api/admin/users/${userId}`;
+};
+
+export const deleteUser = async (
+  userId: string,
+  options?: RequestInit,
+): Promise<ApiError> => {
+  return customFetch<ApiError>(getDeleteUserUrl(userId), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteUserMutationOptions = <
+  TError = ErrorType<ApiError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteUser>>,
+    TError,
+    { userId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteUser>>,
+  TError,
+  { userId: string },
+  TContext
+> => {
+  const mutationKey = ["deleteUser"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteUser>>,
+    { userId: string }
+  > = (props) => {
+    const { userId } = props ?? {};
+
+    return deleteUser(userId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteUserMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteUser>>
+>;
+
+export type DeleteUserMutationError = ErrorType<ApiError>;
+
+/**
+ * @summary Delete a user and all their data (admin only)
+ */
+export const useDeleteUser = <
+  TError = ErrorType<ApiError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteUser>>,
+    TError,
+    { userId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteUser>>,
+  TError,
+  { userId: string },
+  TContext
+> => {
+  return useMutation(getDeleteUserMutationOptions(options));
+};
+
+/**
+ * @summary List all interviews platform-wide (admin only)
+ */
+export const getListAllInterviewsUrl = () => {
+  return `/api/admin/all-interviews`;
+};
+
+export const listAllInterviews = async (
+  options?: RequestInit,
+): Promise<AdminInterviewSummary[]> => {
+  return customFetch<AdminInterviewSummary[]>(getListAllInterviewsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListAllInterviewsQueryKey = () => {
+  return [`/api/admin/all-interviews`] as const;
+};
+
+export const getListAllInterviewsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listAllInterviews>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listAllInterviews>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListAllInterviewsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listAllInterviews>>
+  > = ({ signal }) => listAllInterviews({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listAllInterviews>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListAllInterviewsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listAllInterviews>>
+>;
+export type ListAllInterviewsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List all interviews platform-wide (admin only)
+ */
+
+export function useListAllInterviews<
+  TData = Awaited<ReturnType<typeof listAllInterviews>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listAllInterviews>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListAllInterviewsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Delete an interview (admin only)
+ */
+export const getDeleteAdminInterviewUrl = (id: number) => {
+  return `/api/admin/interviews/${id}`;
+};
+
+export const deleteAdminInterview = async (
+  id: number,
+  options?: RequestInit,
+): Promise<ApiError> => {
+  return customFetch<ApiError>(getDeleteAdminInterviewUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteAdminInterviewMutationOptions = <
+  TError = ErrorType<ApiError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteAdminInterview>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteAdminInterview>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["deleteAdminInterview"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteAdminInterview>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteAdminInterview(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteAdminInterviewMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteAdminInterview>>
+>;
+
+export type DeleteAdminInterviewMutationError = ErrorType<ApiError>;
+
+/**
+ * @summary Delete an interview (admin only)
+ */
+export const useDeleteAdminInterview = <
+  TError = ErrorType<ApiError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteAdminInterview>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteAdminInterview>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getDeleteAdminInterviewMutationOptions(options));
+};

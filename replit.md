@@ -61,6 +61,10 @@ All under `/api`:
 | PUT | `/users/profile` | Update user role |
 | GET | `/admin/users` | List all users (admin only) |
 | GET | `/admin/stats` | Platform stats (admin only) |
+| PUT | `/admin/users/:userId/role` | Change a user's role (admin only) |
+| DELETE | `/admin/users/:userId` | Delete user + all data (admin only) |
+| GET | `/admin/all-interviews` | All interviews platform-wide (admin only) |
+| DELETE | `/admin/interviews/:id` | Delete interview (admin only) |
 
 ## AI Prompts
 
@@ -83,7 +87,7 @@ Defined in `artifacts/api-server/src/lib/aiPrompts.ts`:
 | `/interviews` | List all interviews | Protected |
 | `/interviews/:id` | Live chat interview session | Protected |
 | `/interviews/:id/results` | Evaluation results + score | Protected |
-| `/admin` | Admin panel (users + stats) | Protected (admin) |
+| `/admin` | Admin panel — 3 tabs: Overview, Users, Interviews | Protected (admin role required, `AdminRoute`) |
 | `/settings` | Account settings | Protected |
 
 ## Codegen

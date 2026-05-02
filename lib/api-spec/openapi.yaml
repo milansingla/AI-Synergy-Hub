@@ -248,6 +248,102 @@ paths:
               schema:
                 $ref: "#/components/schemas/AdminStats"
 
+  /admin/users/{userId}/role:
+    put:
+      operationId: updateUserRole
+      tags: [admin]
+      summary: Update a user's role (admin only)
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminUpdateUserRoleBody"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUser"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /admin/users/{userId}:
+    delete:
+      operationId: deleteUser
+      tags: [admin]
+      summary: Delete a user and all their data (admin only)
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: User deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /admin/all-interviews:
+    get:
+      operationId: listAllInterviews
+      tags: [admin]
+      summary: List all interviews platform-wide (admin only)
+      responses:
+        "200":
+          description: All interviews across all users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminInterviewSummary"
+
+  /admin/interviews/{id}:
+    delete:
+      operationId: deleteAdminInterview
+      tags: [admin]
+      summary: Delete an interview (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Interview deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
 components:
   schemas:
     HealthStatus:
@@ -571,3 +667,43 @@ components:
         - totalInterviews
         - completedInterviews
         - averageScore
+
+    AdminUpdateUserRoleBody:
+      type: object
+      properties:
+        role:
+          type: string
+          enum: [student, admin]
+      required:
+        - role
+
+    AdminInterviewSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: string
+        userEmail:
+          type: string
+        role:
+          type: string
+        status:
+          type: string
+          enum: [in_progress, completed]
+        score:
+          type: number
+          nullable: true
+        messageCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - userId
+        - userEmail
+        - role
+        - status
+        - messageCount
+        - createdAt

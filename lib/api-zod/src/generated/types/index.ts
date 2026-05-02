@@ -6,7 +6,11 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from "./adminInterviewSummary";
+export * from "./adminInterviewSummaryStatus";
 export * from "./adminStats";
+export * from "./adminUpdateUserRoleBody";
+export * from "./adminUpdateUserRoleBodyRole";
 export * from "./adminUser";
 export * from "./aIMessage";
 export * from "./apiError";

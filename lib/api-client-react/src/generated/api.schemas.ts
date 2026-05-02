@@ -176,3 +176,34 @@ export interface AdminStats {
   completedInterviews: number;
   averageScore: number;
 }
+
+export type AdminUpdateUserRoleBodyRole =
+  (typeof AdminUpdateUserRoleBodyRole)[keyof typeof AdminUpdateUserRoleBodyRole];
+
+export const AdminUpdateUserRoleBodyRole = {
+  student: "student",
+  admin: "admin",
+} as const;
+
+export interface AdminUpdateUserRoleBody {
+  role: AdminUpdateUserRoleBodyRole;
+}
+
+export type AdminInterviewSummaryStatus =
+  (typeof AdminInterviewSummaryStatus)[keyof typeof AdminInterviewSummaryStatus];
+
+export const AdminInterviewSummaryStatus = {
+  in_progress: "in_progress",
+  completed: "completed",
+} as const;
+
+export interface AdminInterviewSummary {
+  id: number;
+  userId: string;
+  userEmail: string;
+  role: string;
+  status: AdminInterviewSummaryStatus;
+  score?: number | null;
+  messageCount: number;
+  createdAt: string;
+}

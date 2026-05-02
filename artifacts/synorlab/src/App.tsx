@@ -1,9 +1,10 @@
-import { Switch, Route, Router as WouterRouter, useLocation, Redirect } from "wouter";
+import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { ClerkProvider, RedirectToSignIn, useAuth } from "@clerk/react";
+import { ClerkProvider, RedirectToSignIn, useAuth, SignIn, SignUp } from "@clerk/react";
 import { dark } from "@clerk/themes";
+import { useGetUserProfile } from "@workspace/api-client-react";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
 import Dashboard from "@/pages/dashboard";
@@ -13,7 +14,6 @@ import InterviewSession from "@/pages/interview-session";
 import InterviewResults from "@/pages/interview-results";
 import AdminPanel from "@/pages/admin";
 import Settings from "@/pages/settings";
-import { SignIn, SignUp } from "@clerk/react";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +28,26 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
   if (!isSignedIn) {
     return <RedirectToSignIn />;
+  }
+  return <>{children}</>;
+}
+
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const { isSignedIn, isLoaded } = useAuth();
+  const { data: profile, isLoading: profileLoading } = useGetUserProfile();
+  const [, navigate] = useLocation();
+
+  if (!isLoaded || profileLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+  if (!isSignedIn) return <RedirectToSignIn />;
+  if (profile && profile.role !== "admin") {
+    navigate("/dashboard");
+    return null;
   }
   return <>{children}</>;
 }
@@ -80,7 +100,7 @@ function AppRoutes() {
       </Route>
 
       <Route path="/admin">
-        <ProtectedRoute><AdminPanel /></ProtectedRoute>
+        <AdminRoute><AdminPanel /></AdminRoute>
       </Route>
 
       <Route path="/settings">

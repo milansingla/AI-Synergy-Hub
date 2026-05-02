@@ -194,3 +194,61 @@ export const GetAdminStatsResponse = zod.object({
   completedInterviews: zod.number(),
   averageScore: zod.number(),
 });
+
+/**
+ * @summary Update a user's role (admin only)
+ */
+export const UpdateUserRoleParams = zod.object({
+  userId: zod.coerce.string(),
+});
+
+export const UpdateUserRoleBody = zod.object({
+  role: zod.enum(["student", "admin"]),
+});
+
+export const UpdateUserRoleResponse = zod.object({
+  id: zod.string(),
+  email: zod.string(),
+  role: zod.string(),
+  totalInterviews: zod.number(),
+  createdAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Delete a user and all their data (admin only)
+ */
+export const DeleteUserParams = zod.object({
+  userId: zod.coerce.string(),
+});
+
+export const DeleteUserResponse = zod.object({
+  error: zod.string(),
+});
+
+/**
+ * @summary List all interviews platform-wide (admin only)
+ */
+export const ListAllInterviewsResponseItem = zod.object({
+  id: zod.number(),
+  userId: zod.string(),
+  userEmail: zod.string(),
+  role: zod.string(),
+  status: zod.enum(["in_progress", "completed"]),
+  score: zod.number().nullish(),
+  messageCount: zod.number(),
+  createdAt: zod.coerce.date(),
+});
+export const ListAllInterviewsResponse = zod.array(
+  ListAllInterviewsResponseItem,
+);
+
+/**
+ * @summary Delete an interview (admin only)
+ */
+export const DeleteAdminInterviewParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const DeleteAdminInterviewResponse = zod.object({
+  error: zod.string(),
+});
