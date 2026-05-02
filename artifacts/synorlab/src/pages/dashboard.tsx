@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 
 function ScoreBadge({ score }: { score: number | null | undefined }) {
   if (score === null || score === undefined) return <span className="text-xs text-muted-foreground font-mono">—</span>;
-  const color = score >= 85 ? "text-green-400" : score >= 70 ? "text-emerald-400" : score >= 55 ? "text-yellow-400" : score >= 38 ? "text-orange-400" : "text-red-400";
+  const color = score >= 85 ? "text-green-600" : score >= 70 ? "text-emerald-600" : score >= 55 ? "text-yellow-600" : score >= 38 ? "text-orange-600" : "text-red-600";
   return <span className={cn("text-xs font-mono font-semibold", color)}>{score}%</span>;
 }
 
@@ -122,7 +122,7 @@ export default function Dashboard() {
                         variant={interview.status === "completed" ? "default" : "secondary"}
                         className={cn(
                           "text-xs font-mono h-5",
-                          interview.status === "completed" && "bg-green-500/15 text-green-400 border-green-500/20"
+                          interview.status === "completed" && "bg-green-100 text-green-700 border-green-200"
                         )}
                         data-testid={`status-${interview.id}`}
                       >

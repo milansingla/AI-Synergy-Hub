@@ -1,33 +1,50 @@
 import { Link, useLocation } from "wouter";
 import { useEffect } from "react";
 import { useAuth } from "@clerk/react";
-import { Zap, Brain, BarChart3, FileText, ArrowRight, CheckCircle2 } from "lucide-react";
+import {
+  Zap,
+  Brain,
+  BarChart3,
+  FileText,
+  ArrowRight,
+  CheckCircle2,
+  Users,
+  Star,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 
 const features = [
   {
     icon: FileText,
     title: "Paste any job description",
-    desc: "Our AI extracts the role, required skills, and experience level instantly.",
+    desc: "Our AI extracts the role, required skills, and experience level instantly — no setup needed.",
+    color: "bg-teal-50 text-teal-600",
   },
   {
     icon: Brain,
     title: "AI-powered interview engine",
-    desc: "Conversational questions tailored to the exact role — no two sessions are the same.",
+    desc: "Conversational questions tailored to the exact role. No two sessions are ever the same.",
+    color: "bg-blue-50 text-blue-600",
   },
   {
     icon: BarChart3,
     title: "Actionable evaluations",
-    desc: "Scored feedback on every answer: strengths, improvements, and an overall score.",
+    desc: "Scored feedback on every answer: strengths, improvements, and an honest overall verdict.",
+    color: "bg-violet-50 text-violet-600",
   },
+];
+
+const stats = [
+  { value: "500+", label: "Students onboarded" },
+  { value: "12k+", label: "Practice sessions" },
+  { value: "94%", label: "Satisfaction rate" },
 ];
 
 const benefits = [
   "Tailored questions for every job description",
   "Instant, scored feedback after each session",
-  "Track your progress over multiple sessions",
-  "Role-based: student and admin access",
+  "Track progress over multiple sessions",
+  "Role-based access: student and faculty",
 ];
 
 export default function Landing() {
@@ -41,89 +58,142 @@ export default function Landing() {
   }, [isLoaded, isSignedIn, navigate]);
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      {/* Nav */}
-      <nav className="flex items-center justify-between px-8 h-16 border-b border-border/40">
-        <div className="flex items-center gap-2">
-          <div className="flex items-center justify-center w-8 h-8 rounded bg-primary text-primary-foreground">
-            <Zap size={16} strokeWidth={2.5} />
+    <div className="min-h-screen bg-background text-foreground font-sans">
+
+      {/* ── Navigation ── */}
+      <nav className="bg-white border-b border-border sticky top-0 z-40 shadow-sm">
+        <div className="max-w-6xl mx-auto flex items-center justify-between px-6 h-16">
+          <div className="flex items-center gap-2.5">
+            <div className="flex items-center justify-center w-8 h-8 rounded-md bg-primary text-primary-foreground shadow-sm">
+              <Zap size={16} strokeWidth={2.5} />
+            </div>
+            <span className="font-extrabold text-base tracking-tight text-foreground">Synorlab</span>
           </div>
-          <span className="font-semibold text-sm tracking-tight">Synorlab</span>
-        </div>
-        <div className="flex items-center gap-3">
-          <Link href="/sign-in">
-            <Button variant="ghost" size="sm" data-testid="btn-sign-in">Sign in</Button>
-          </Link>
-          <Link href="/sign-up">
-            <Button size="sm" data-testid="btn-get-started">Get started</Button>
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link href="/sign-in">
+              <Button variant="ghost" size="sm" className="font-semibold text-foreground/70 hover:text-foreground">
+                Sign in
+              </Button>
+            </Link>
+            <Link href="/sign-up">
+              <Button size="sm" className="font-bold bg-primary hover:bg-primary/90 text-white shadow-sm">
+                Get started
+              </Button>
+            </Link>
+          </div>
         </div>
       </nav>
 
-      {/* Hero */}
-      <section className="relative flex flex-col items-center justify-center px-6 pt-28 pb-24 text-center overflow-hidden">
-        {/* Glow */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-primary/8 rounded-full blur-3xl" />
+      {/* ── Hero ── */}
+      <section className="bg-white border-b border-border">
+        <div className="max-w-6xl mx-auto px-6 py-20 flex flex-col lg:flex-row items-center gap-14">
+          {/* Left */}
+          <div className="flex-1 text-left">
+            <span className="inline-flex items-center gap-1.5 text-xs font-bold text-primary bg-teal-50 border border-teal-100 rounded-full px-3 py-1 mb-6">
+              <Star size={10} fill="currentColor" /> AI Interview Practice for Universities
+            </span>
+            <h1 className="text-4xl lg:text-5xl font-extrabold leading-tight tracking-tight text-foreground mb-5">
+              Practice interviews<br />
+              <span className="text-primary">like a pro.</span>
+            </h1>
+            <p className="text-base text-muted-foreground leading-relaxed mb-8 max-w-lg">
+              Paste a real job description. Synorlab's AI interviewer asks you the right questions,
+              then scores your answers with honest, detailed feedback — instantly.
+            </p>
+            <div className="flex items-center gap-3 flex-wrap">
+              <Link href="/sign-up">
+                <Button size="lg" className="gap-2 font-bold bg-primary hover:bg-primary/90 text-white shadow-md">
+                  Start practising free <ArrowRight size={16} />
+                </Button>
+              </Link>
+              <Link href="/sign-in">
+                <Button size="lg" variant="outline" className="font-semibold border-border">
+                  Sign in
+                </Button>
+              </Link>
+            </div>
+            {/* Benefits list */}
+            <div className="mt-8 flex flex-col gap-2">
+              {benefits.map((b) => (
+                <div key={b} className="flex items-center gap-2.5 text-sm text-muted-foreground">
+                  <CheckCircle2 size={14} className="text-primary shrink-0" />
+                  {b}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Right — mock card */}
+          <div className="flex-1 w-full max-w-md">
+            <div className="bg-background border border-border rounded-xl p-6 shadow-md space-y-4">
+              <div className="flex items-center gap-3 pb-3 border-b border-border">
+                <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Brain size={16} className="text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-foreground">Synorlab AI Interviewer</p>
+                  <p className="text-xs text-muted-foreground">Product Manager — TechCorp</p>
+                </div>
+                <span className="ml-auto text-[10px] font-bold bg-teal-100 text-teal-700 px-2 py-0.5 rounded-full">Live</span>
+              </div>
+              {[
+                { role: "ai", msg: "Tell me about a time you led a cross-functional team through ambiguity. What was your approach?" },
+                { role: "user", msg: "In my last role, I led a 6-person team building a new payments feature. I set up weekly syncs and clear OKRs..." },
+                { role: "ai", msg: "Good structure. How did you handle disagreements between engineering and design?" },
+              ].map((m, i) => (
+                <div key={i} className={`flex gap-2.5 ${m.role === "user" ? "flex-row-reverse" : ""}`}>
+                  <div className={`w-6 h-6 rounded-full shrink-0 flex items-center justify-center text-[10px] font-bold mt-0.5 ${m.role === "ai" ? "bg-primary text-white" : "bg-blue-100 text-blue-700"}`}>
+                    {m.role === "ai" ? "AI" : "You"}
+                  </div>
+                  <div className={`text-xs leading-relaxed rounded-lg px-3 py-2 max-w-[80%] ${m.role === "ai" ? "bg-secondary text-foreground" : "bg-primary/10 text-foreground"}`}>
+                    {m.msg}
+                  </div>
+                </div>
+              ))}
+              <div className="flex items-center gap-2 mt-2 pt-3 border-t border-border">
+                <div className="flex-1 h-8 rounded-md bg-secondary border border-border text-xs px-3 flex items-center text-muted-foreground">
+                  Type your answer…
+                </div>
+                <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center">
+                  <ArrowRight size={13} className="text-white" />
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
+      </section>
 
-        <Badge variant="secondary" className="mb-6 font-mono text-xs text-primary border-primary/20 bg-primary/10">
-          AI Interview Practice for Universities
-        </Badge>
-
-        <h1 className="max-w-3xl text-5xl font-bold leading-tight tracking-tight mb-6">
-          Practice interviews like a pro.{" "}
-          <span className="text-primary">Get scored feedback</span>{" "}
-          every time.
-        </h1>
-
-        <p className="max-w-xl text-lg text-muted-foreground mb-10 leading-relaxed">
-          Paste a real job description. Synorlab's AI interviewer asks you the right questions,
-          then scores your answers with honest, detailed feedback.
-        </p>
-
-        <div className="flex items-center gap-4">
-          <Link href="/sign-up">
-            <Button size="lg" className="gap-2 font-semibold" data-testid="btn-hero-cta">
-              Start practicing <ArrowRight size={16} />
-            </Button>
-          </Link>
-          <Link href="/sign-in">
-            <Button size="lg" variant="outline" data-testid="btn-hero-signin">
-              Sign in
-            </Button>
-          </Link>
-        </div>
-
-        {/* Benefits */}
-        <div className="mt-12 flex flex-wrap gap-x-8 gap-y-2 justify-center">
-          {benefits.map((b) => (
-            <div key={b} className="flex items-center gap-2 text-sm text-muted-foreground">
-              <CheckCircle2 size={14} className="text-primary shrink-0" />
-              {b}
+      {/* ── Stats ── */}
+      <section className="bg-primary">
+        <div className="max-w-6xl mx-auto px-6 py-10 grid grid-cols-3 divide-x divide-white/20">
+          {stats.map(({ value, label }) => (
+            <div key={label} className="text-center px-6">
+              <p className="text-3xl font-extrabold text-white">{value}</p>
+              <p className="text-xs text-white/75 mt-1 font-medium">{label}</p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Features */}
-      <section className="px-8 py-20 border-t border-border/40">
-        <div className="max-w-5xl mx-auto">
-          <h2 className="text-2xl font-bold text-center mb-3">Built for real interview prep</h2>
-          <p className="text-center text-muted-foreground mb-14 text-sm">
-            From job description to scored feedback in minutes.
-          </p>
+      {/* ── Features ── */}
+      <section className="bg-background border-t border-border">
+        <div className="max-w-6xl mx-auto px-6 py-20">
+          <div className="text-center mb-12">
+            <h2 className="text-2xl font-extrabold text-foreground mb-3">Built for real interview prep</h2>
+            <p className="text-sm text-muted-foreground max-w-md mx-auto">
+              From job description to scored feedback in minutes. No fluff, no generic questions.
+            </p>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {features.map(({ icon: Icon, title, desc }) => (
+            {features.map(({ icon: Icon, title, desc, color }) => (
               <div
                 key={title}
-                className="rounded-xl border border-border bg-card p-6 hover:border-primary/40 transition-colors"
-                data-testid={`feature-${title.toLowerCase().replace(/\s+/g, "-")}`}
+                className="bg-white rounded-xl border border-border p-6 shadow-sm hover:shadow-md transition-shadow"
               >
-                <div className="w-10 h-10 rounded-lg bg-accent flex items-center justify-center mb-4">
-                  <Icon size={18} className="text-primary" />
+                <div className={`w-11 h-11 rounded-lg ${color} flex items-center justify-center mb-5`}>
+                  <Icon size={20} />
                 </div>
-                <h3 className="font-semibold mb-2">{title}</h3>
+                <h3 className="font-bold text-base text-foreground mb-2">{title}</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">{desc}</p>
               </div>
             ))}
@@ -131,23 +201,46 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="px-8 py-20 border-t border-border/40">
-        <div className="max-w-2xl mx-auto text-center">
-          <h2 className="text-3xl font-bold mb-4">Ready to ace your next interview?</h2>
-          <p className="text-muted-foreground mb-8">
-            Join students already using Synorlab to prepare smarter.
-          </p>
-          <Link href="/sign-up">
-            <Button size="lg" className="gap-2 font-semibold" data-testid="btn-footer-cta">
-              Get started free <ArrowRight size={16} />
-            </Button>
-          </Link>
+      {/* ── CTA ── */}
+      <section className="bg-white border-t border-border">
+        <div className="max-w-4xl mx-auto px-6 py-20 flex flex-col md:flex-row items-center gap-10">
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-3">
+              <Users size={16} className="text-primary" />
+              <span className="text-xs font-bold text-primary uppercase tracking-wide">For universities</span>
+            </div>
+            <h2 className="text-2xl font-extrabold text-foreground mb-3">
+              Ready to ace your next interview?
+            </h2>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Join students and educators already using Synorlab to prepare smarter, score higher, and land better roles.
+            </p>
+          </div>
+          <div className="flex flex-col gap-3 shrink-0">
+            <Link href="/sign-up">
+              <Button size="lg" className="gap-2 font-bold bg-primary hover:bg-primary/90 text-white shadow-md w-full">
+                Get started free <ArrowRight size={16} />
+              </Button>
+            </Link>
+            <Link href="/sign-in">
+              <Button size="lg" variant="outline" className="font-semibold w-full border-border">
+                Sign in to your account
+              </Button>
+            </Link>
+          </div>
         </div>
       </section>
 
-      <footer className="px-8 py-6 border-t border-border/40 text-center text-xs text-muted-foreground">
-        Synorlab Interviewer — built for universities
+      <footer className="bg-background border-t border-border">
+        <div className="max-w-6xl mx-auto px-6 py-6 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-5 h-5 rounded bg-primary/10 flex items-center justify-center">
+              <Zap size={10} className="text-primary" />
+            </div>
+            <span className="text-xs font-bold text-foreground/60">Synorlab</span>
+          </div>
+          <p className="text-xs text-muted-foreground">Built for universities · AI interview practice</p>
+        </div>
       </footer>
     </div>
   );

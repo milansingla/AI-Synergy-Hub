@@ -28,14 +28,14 @@ function ScorePill({ score }: { score: number | null | undefined }) {
   if (score == null) return <span className="text-xs text-muted-foreground font-mono">—</span>;
   const color =
     score >= 85
-      ? "text-green-400 bg-green-400/10 border-green-400/20"
+      ? "text-green-700 bg-green-50 border-green-200"
       : score >= 70
-      ? "text-emerald-400 bg-emerald-400/10 border-emerald-400/20"
+      ? "text-emerald-700 bg-emerald-50 border-emerald-200"
       : score >= 55
-      ? "text-yellow-400 bg-yellow-400/10 border-yellow-400/20"
+      ? "text-yellow-700 bg-yellow-50 border-yellow-200"
       : score >= 38
-      ? "text-orange-400 bg-orange-400/10 border-orange-400/20"
-      : "text-red-400 bg-red-400/10 border-red-400/20";
+      ? "text-orange-700 bg-orange-50 border-orange-200"
+      : "text-red-700 bg-red-50 border-red-200";
   return (
     <span className={cn("text-xs font-mono font-semibold border rounded px-1.5 py-0.5", color)}>
       {Math.round(score)}%

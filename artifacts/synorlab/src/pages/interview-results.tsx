@@ -15,19 +15,19 @@ import { cn } from "@/lib/utils";
 
 /* ─── Score helpers ─────────────────────────────────────────────────────────── */
 function scoreColor(score: number): string {
-  if (score >= 85) return "#4ade80";
-  if (score >= 70) return "#34d399";
-  if (score >= 55) return "#facc15";
-  if (score >= 38) return "#fb923c";
-  return "#f87171";
+  if (score >= 85) return "#16a34a";
+  if (score >= 70) return "#059669";
+  if (score >= 55) return "#ca8a04";
+  if (score >= 38) return "#ea580c";
+  return "#dc2626";
 }
 
 function verdictFromScore(score: number): { label: string; color: string; bg: string; border: string; description: string } {
-  if (score >= 85) return { label: "Strong Hire", color: "#4ade80", bg: "#4ade8015", border: "#4ade8040", description: "Top-tier performance. Recommend advancing immediately." };
-  if (score >= 70) return { label: "Hire", color: "#34d399", bg: "#34d39915", border: "#34d39940", description: "Meets the bar. Recommend proceeding to next round." };
-  if (score >= 55) return { label: "Hold", color: "#facc15", bg: "#facc1515", border: "#facc1540", description: "Below the hiring bar. Consider a follow-up interview." };
-  if (score >= 38) return { label: "Weak", color: "#fb923c", bg: "#fb923c15", border: "#fb923c40", description: "Significant gaps identified. Does not recommend hire." };
-  return { label: "No Hire", color: "#f87171", bg: "#f8717115", border: "#f8717140", description: "Failed to demonstrate minimum competencies for this role." };
+  if (score >= 85) return { label: "Strong Hire", color: "#16a34a", bg: "#16a34a15", border: "#16a34a40", description: "Top-tier performance. Recommend advancing immediately." };
+  if (score >= 70) return { label: "Hire", color: "#059669", bg: "#05966915", border: "#05966940", description: "Meets the bar. Recommend proceeding to next round." };
+  if (score >= 55) return { label: "Hold", color: "#ca8a04", bg: "#ca8a0415", border: "#ca8a0440", description: "Below the hiring bar. Consider a follow-up interview." };
+  if (score >= 38) return { label: "Weak", color: "#ea580c", bg: "#ea580c15", border: "#ea580c40", description: "Significant gaps identified. Does not recommend hire." };
+  return { label: "No Hire", color: "#dc2626", bg: "#dc262615", border: "#dc262640", description: "Failed to demonstrate minimum competencies for this role." };
 }
 
 /* ─── Score ring ────────────────────────────────────────────────────────────── */
@@ -61,7 +61,7 @@ function ScoreRing({ score }: { score: number }) {
 /* ─── Criteria bar ──────────────────────────────────────────────────────────── */
 function CriteriaBar({ dimension, score, weight, feedback }: { dimension: string; score: number; weight: number; feedback: string }) {
   const color = score >= 85 ? "bg-green-500" : score >= 70 ? "bg-emerald-500" : score >= 55 ? "bg-yellow-500" : score >= 38 ? "bg-orange-500" : "bg-red-500";
-  const textColor = score >= 85 ? "text-green-400" : score >= 70 ? "text-emerald-400" : score >= 55 ? "text-yellow-400" : score >= 38 ? "text-orange-400" : "text-red-400";
+  const textColor = score >= 85 ? "text-green-700" : score >= 70 ? "text-emerald-700" : score >= 55 ? "text-yellow-700" : score >= 38 ? "text-orange-700" : "text-red-700";
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between gap-3">
@@ -211,13 +211,13 @@ export default function InterviewResults() {
             <div className="grid grid-cols-2 gap-4">
               <div className="rounded-xl border border-border bg-card p-5">
                 <div className="flex items-center gap-2 mb-4">
-                  <CheckCircle2 size={14} className="text-green-400" />
+                  <CheckCircle2 size={14} className="text-green-700" />
                   <h3 className="text-sm font-semibold">Key Strengths</h3>
                 </div>
                 <ul className="space-y-3" data-testid="list-strengths">
                   {(evaluation.strengths as string[]).map((s, i) => (
                     <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
-                      <span className="text-green-400 mt-0.5 text-xs shrink-0">+</span>
+                      <span className="text-green-700 mt-0.5 text-xs shrink-0">+</span>
                       {s}
                     </li>
                   ))}
@@ -225,13 +225,13 @@ export default function InterviewResults() {
               </div>
               <div className="rounded-xl border border-border bg-card p-5">
                 <div className="flex items-center gap-2 mb-4">
-                  <TrendingUp size={14} className="text-yellow-400" />
+                  <TrendingUp size={14} className="text-yellow-700" />
                   <h3 className="text-sm font-semibold">Areas to Improve</h3>
                 </div>
                 <ul className="space-y-3" data-testid="list-improvements">
                   {(evaluation.improvements as string[]).map((s, i) => (
                     <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
-                      <span className="text-yellow-400 mt-0.5 text-xs shrink-0">→</span>
+                      <span className="text-yellow-700 mt-0.5 text-xs shrink-0">→</span>
                       {s}
                     </li>
                   ))}
@@ -256,11 +256,11 @@ export default function InterviewResults() {
                         <Badge
                           variant="secondary"
                           className={cn("font-mono text-xs shrink-0",
-                            qe.score >= 85 ? "bg-green-400/10 text-green-400 border-green-400/20"
-                            : qe.score >= 70 ? "bg-emerald-400/10 text-emerald-400 border-emerald-400/20"
-                            : qe.score >= 55 ? "bg-yellow-400/10 text-yellow-400 border-yellow-400/20"
-                            : qe.score >= 38 ? "bg-orange-400/10 text-orange-400 border-orange-400/20"
-                            : "bg-red-400/10 text-red-400 border-red-400/20"
+                            qe.score >= 85 ? "bg-green-400/10 text-green-700 border-green-400/20"
+                            : qe.score >= 70 ? "bg-emerald-400/10 text-emerald-700 border-emerald-400/20"
+                            : qe.score >= 55 ? "bg-yellow-400/10 text-yellow-700 border-yellow-400/20"
+                            : qe.score >= 38 ? "bg-orange-400/10 text-orange-700 border-orange-400/20"
+                            : "bg-red-400/10 text-red-700 border-red-400/20"
                           )}
                         >
                           {qe.score}%

@@ -4,7 +4,6 @@ import { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ClerkProvider, RedirectToSignIn, useAuth, SignIn, SignUp } from "@clerk/react";
-import { dark } from "@clerk/themes";
 import { useGetUserProfile } from "@workspace/api-client-react";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
@@ -181,55 +180,54 @@ function ClerkWrappedApp() {
       routerReplace={(to) => navigate(to, { replace: true })}
       {...(import.meta.env.PROD ? { proxyUrl: "/api/__clerk" } : {})}
       appearance={{
-        baseTheme: dark,
         variables: {
-          colorPrimary: "#00d4ff",
-          colorBackground: "#111827",
-          colorInputBackground: "#1e2a3d",
-          colorText: "#f0f4f8",
-          colorTextSecondary: "#94a3b8",
-          colorNeutral: "#94a3b8",
-          colorInputText: "#f0f4f8",
-          colorShimmer: "#1e2a3d",
-          borderRadius: "0.6rem",
-          fontFamily: "'Plus Jakarta Sans', sans-serif",
+          colorPrimary: "#00AC9A",
+          colorBackground: "#FFFFFF",
+          colorInputBackground: "#F4F7F6",
+          colorText: "#363535",
+          colorTextSecondary: "#6b7280",
+          colorNeutral: "#6b7280",
+          colorInputText: "#363535",
+          colorShimmer: "#F4F7F6",
+          borderRadius: "0.375rem",
+          fontFamily: "'Nunito', sans-serif",
         },
         elements: {
           card: {
-            background: "#1a2234",
-            border: "1px solid #2a3a55",
-            boxShadow: "0 25px 50px rgba(0,0,0,0.5)",
+            background: "#FFFFFF",
+            border: "1px solid #E9E6E1",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
           },
-          headerTitle: { color: "#f0f4f8", fontWeight: "600" },
-          headerSubtitle: { color: "#94a3b8" },
+          headerTitle: { color: "#363535", fontWeight: "700" },
+          headerSubtitle: { color: "#6b7280" },
           socialButtonsBlockButton: {
-            background: "#1e2a3d",
-            border: "1px solid #2a3a55",
-            color: "#f0f4f8",
+            background: "#F4F7F6",
+            border: "1px solid #E9E6E1",
+            color: "#363535",
           },
-          socialButtonsBlockButtonText: { color: "#f0f4f8" },
-          dividerLine: { background: "#2a3a55" },
-          dividerText: { color: "#64748b" },
-          formFieldLabel: { color: "#94a3b8" },
+          socialButtonsBlockButtonText: { color: "#363535" },
+          dividerLine: { background: "#E9E6E1" },
+          dividerText: { color: "#9ca3af" },
+          formFieldLabel: { color: "#4b5563" },
           formFieldInput: {
-            background: "#1e2a3d",
-            border: "1px solid #2a3a55",
-            color: "#f0f4f8",
+            background: "#FFFFFF",
+            border: "1px solid #E9E6E1",
+            color: "#363535",
           },
           formButtonPrimary: {
-            background: "#00d4ff",
-            color: "#0a1628",
-            fontWeight: "600",
+            background: "#00AC9A",
+            color: "#FFFFFF",
+            fontWeight: "700",
           },
-          footerActionText: { color: "#64748b" },
-          footerActionLink: { color: "#00d4ff" },
-          identityPreviewText: { color: "#f0f4f8" },
-          identityPreviewEditButton: { color: "#00d4ff" },
-          formResendCodeLink: { color: "#00d4ff" },
+          footerActionText: { color: "#6b7280" },
+          footerActionLink: { color: "#00AC9A" },
+          identityPreviewText: { color: "#363535" },
+          identityPreviewEditButton: { color: "#00AC9A" },
+          formResendCodeLink: { color: "#00AC9A" },
           otpCodeFieldInput: {
-            background: "#1e2a3d",
-            border: "1px solid #2a3a55",
-            color: "#f0f4f8",
+            background: "#F4F7F6",
+            border: "1px solid #E9E6E1",
+            color: "#363535",
           },
         },
       }}

@@ -72,14 +72,14 @@ function ScorePill({ score }: { score: number | null | undefined }) {
   if (score == null) return <span className="text-xs text-muted-foreground font-mono">—</span>;
   const color =
     score >= 85
-      ? "text-green-400 bg-green-400/10 border-green-400/20"
+      ? "text-green-700 bg-green-50 border-green-200"
       : score >= 70
-      ? "text-emerald-400 bg-emerald-400/10 border-emerald-400/20"
+      ? "text-emerald-700 bg-emerald-50 border-emerald-200"
       : score >= 55
-      ? "text-yellow-400 bg-yellow-400/10 border-yellow-400/20"
+      ? "text-yellow-700 bg-yellow-50 border-yellow-200"
       : score >= 38
-      ? "text-orange-400 bg-orange-400/10 border-orange-400/20"
-      : "text-red-400 bg-red-400/10 border-red-400/20";
+      ? "text-orange-700 bg-orange-50 border-orange-200"
+      : "text-red-700 bg-red-50 border-red-200";
   return (
     <span className={cn("text-xs font-mono font-semibold border rounded px-1.5 py-0.5", color)}>
       {Math.round(score)}%
@@ -89,9 +89,9 @@ function ScorePill({ score }: { score: number | null | undefined }) {
 
 function RoleBadge({ role }: { role: string }) {
   const cfg: Record<string, string> = {
-    admin: "bg-rose-500/15 text-rose-400 border-rose-500/20",
-    facility: "bg-violet-500/15 text-violet-400 border-violet-500/20",
-    student: "bg-cyan-500/15 text-cyan-400 border-cyan-500/20",
+    admin: "bg-rose-100 text-rose-700 border-rose-200",
+    facility: "bg-violet-100 text-violet-700 border-violet-200",
+    student: "bg-teal-100 text-teal-700 border-teal-200",
   };
   return (
     <span
@@ -269,7 +269,7 @@ function UsersTab() {
                     </div>
                     <button
                       onClick={() => setPendingDelete({ id: user.id, email: user.email })}
-                      className="flex items-center justify-center w-8 h-8 rounded-md text-muted-foreground hover:text-red-400 hover:bg-red-400/10 transition-colors"
+                      className="flex items-center justify-center w-8 h-8 rounded-md text-muted-foreground hover:text-red-600 hover:bg-red-50 transition-colors"
                     >
                       <Trash2 size={13} />
                     </button>
@@ -281,7 +281,7 @@ function UsersTab() {
                       <p className="text-sm font-mono truncate flex-1">{user.email}</p>
                       <button
                         onClick={() => setPendingDelete({ id: user.id, email: user.email })}
-                        className="p-1.5 text-muted-foreground hover:text-red-400 transition-colors shrink-0"
+                        className="p-1.5 text-muted-foreground hover:text-red-600 transition-colors shrink-0"
                       >
                         <Trash2 size={13} />
                       </button>
@@ -417,7 +417,7 @@ function InterviewsTab() {
                       variant={iv.status === "completed" ? "default" : "secondary"}
                       className={cn(
                         "text-xs font-mono h-5 w-fit",
-                        iv.status === "completed" && "bg-green-500/15 text-green-400 border-green-500/20"
+                        iv.status === "completed" && "bg-green-100 text-green-700 border-green-200"
                       )}
                     >
                       {iv.status === "completed" ? "done" : "live"}
@@ -429,7 +429,7 @@ function InterviewsTab() {
                     </div>
                     <button
                       onClick={() => setPendingDelete({ id: iv.id, role: iv.role })}
-                      className="flex items-center justify-center w-8 h-8 rounded-md text-muted-foreground hover:text-red-400 hover:bg-red-400/10 transition-colors"
+                      className="flex items-center justify-center w-8 h-8 rounded-md text-muted-foreground hover:text-red-600 hover:bg-red-50 transition-colors"
                     >
                       <Trash2 size={13} />
                     </button>
@@ -442,7 +442,7 @@ function InterviewsTab() {
                       <ScorePill score={iv.score} />
                       <button
                         onClick={() => setPendingDelete({ id: iv.id, role: iv.role })}
-                        className="p-1.5 text-muted-foreground hover:text-red-400 transition-colors"
+                        className="p-1.5 text-muted-foreground hover:text-red-600 transition-colors"
                       >
                         <Trash2 size={13} />
                       </button>
@@ -453,7 +453,7 @@ function InterviewsTab() {
                         variant={iv.status === "completed" ? "default" : "secondary"}
                         className={cn(
                           "text-xs font-mono h-4",
-                          iv.status === "completed" && "bg-green-500/15 text-green-400 border-green-500/20"
+                          iv.status === "completed" && "bg-green-100 text-green-700 border-green-200"
                         )}
                       >
                         {iv.status === "completed" ? "done" : "live"}
@@ -599,7 +599,7 @@ function BulkCSVSection() {
           <h3 className="text-sm font-semibold">Bulk CSV Upload</h3>
         </div>
         <p className="text-xs text-muted-foreground leading-relaxed mb-3">
-          Upload a <span className="font-mono text-foreground">.csv</span> file with two columns: <span className="font-mono text-foreground">email</span> and <span className="font-mono text-foreground">role</span>. Role must be <span className="font-mono text-violet-400">facility</span> or <span className="font-mono text-cyan-400">student</span>. An invite will be created for each valid row — when that person signs up, their role is automatically applied. Maximum 500 rows per upload.
+          Upload a <span className="font-mono text-foreground">.csv</span> file with two columns: <span className="font-mono text-foreground">email</span> and <span className="font-mono text-foreground">role</span>. Role must be <span className="font-mono text-violet-700">facility</span> or <span className="font-mono text-teal-700">student</span>. An invite will be created for each valid row — when that person signs up, their role is automatically applied. Maximum 500 rows per upload.
         </p>
         <div className="bg-secondary/40 rounded-lg px-3 py-2 font-mono text-xs text-muted-foreground">
           <p className="text-foreground/60 mb-1">Example format:</p>
@@ -679,7 +679,7 @@ function BulkCSVSection() {
                     {row.email || "(empty)"}
                   </p>
                   {row.error && (
-                    <p className="text-[10px] text-red-400 flex items-center gap-1 mt-0.5">
+                    <p className="text-[10px] text-red-600 flex items-center gap-1 mt-0.5">
                       <AlertCircle size={9} /> {row.error}
                     </p>
                   )}
@@ -688,13 +688,13 @@ function BulkCSVSection() {
                   <span className={cn(
                     "text-[10px] font-mono font-semibold border rounded px-1.5 py-0.5",
                     row.role === "facility"
-                      ? "bg-violet-500/15 text-violet-400 border-violet-500/20"
-                      : "bg-cyan-500/15 text-cyan-400 border-cyan-500/20"
+                      ? "bg-violet-100 text-violet-700 border-violet-200"
+                      : "bg-teal-100 text-teal-700 border-teal-200"
                   )}>
                     {row.role}
                   </span>
                 ) : (
-                  <span className="text-[10px] text-red-400 font-mono border border-red-400/20 rounded px-1.5 py-0.5">
+                  <span className="text-[10px] text-red-600 font-mono border border-red-200 rounded px-1.5 py-0.5">
                     error
                   </span>
                 )}
@@ -702,7 +702,7 @@ function BulkCSVSection() {
             ))}
           </div>
           {invalidRows.length > 0 && (
-            <div className="px-5 py-2.5 border-t border-border bg-red-500/5 flex items-center gap-2 text-xs text-red-400">
+            <div className="px-5 py-2.5 border-t border-border bg-red-50 flex items-center gap-2 text-xs text-red-600">
               <AlertCircle size={12} />
               {invalidRows.length} row{invalidRows.length !== 1 ? "s" : ""} with errors will be skipped
             </div>
@@ -730,14 +730,14 @@ function BulkCSVSection() {
       {/* Result banner */}
       {result && (
         <div className="rounded-xl border border-green-500/20 bg-green-500/5 p-4 flex items-start gap-3">
-          <CheckCircle2 size={16} className="text-green-400 shrink-0 mt-0.5" />
+          <CheckCircle2 size={16} className="text-green-700 shrink-0 mt-0.5" />
           <div className="text-sm space-y-1">
-            <p className="font-semibold text-green-400">{result.created} invite{result.created !== 1 ? "s" : ""} created successfully</p>
+            <p className="font-semibold text-green-700">{result.created} invite{result.created !== 1 ? "s" : ""} created successfully</p>
             {result.skipped > 0 && (
               <p className="text-xs text-muted-foreground">{result.skipped} skipped (already had a pending invite)</p>
             )}
             {result.errors.length > 0 && (
-              <ul className="text-xs text-red-400 mt-1 space-y-0.5">
+              <ul className="text-xs text-red-600 mt-1 space-y-0.5">
                 {result.errors.slice(0, 5).map((e, i) => <li key={i}>• {e}</li>)}
                 {result.errors.length > 5 && <li>…and {result.errors.length - 5} more</li>}
               </ul>
@@ -825,9 +825,9 @@ function RoleAssignInfo() {
           <p className="text-sm font-semibold">Direct role assignment</p>
           <p className="text-sm text-muted-foreground leading-relaxed">
             Switch to the <strong className="text-foreground">Users</strong> tab. Each user has a
-            role dropdown — change it to <span className="font-mono text-violet-400">facility</span>,{" "}
+            role dropdown — change it to <span className="font-mono text-violet-700">facility</span>,{" "}
             <span className="font-mono text-rose-400">admin</span>, or{" "}
-            <span className="font-mono text-cyan-400">student</span>. The change takes effect
+            <span className="font-mono text-teal-700">student</span>. The change takes effect
             immediately on their next page load.
           </p>
         </div>
@@ -935,16 +935,16 @@ function InviteSection() {
                       className={cn(
                         "text-[10px] font-mono font-semibold border rounded px-1.5 py-0.5",
                         inv.role === "facility"
-                          ? "bg-violet-500/15 text-violet-400 border-violet-500/20"
+                          ? "bg-violet-100 text-violet-700 border-violet-200"
                           : inv.role === "admin"
-                          ? "bg-rose-500/15 text-rose-400 border-rose-500/20"
-                          : "bg-cyan-500/15 text-cyan-400 border-cyan-500/20"
+                          ? "bg-rose-100 text-rose-700 border-rose-200"
+                          : "bg-teal-100 text-teal-700 border-teal-200"
                       )}
                     >
                       {inv.role}
                     </span>
                     {inv.used ? (
-                      <span className="text-[10px] text-green-400 font-mono">✓ used</span>
+                      <span className="text-[10px] text-green-700 font-mono">✓ used</span>
                     ) : (
                       <span className="text-[10px] text-muted-foreground font-mono">pending</span>
                     )}
@@ -952,7 +952,7 @@ function InviteSection() {
                 </div>
                 <button
                   onClick={() => handleDelete(inv.id)}
-                  className="p-1.5 text-muted-foreground hover:text-red-400 transition-colors"
+                  className="p-1.5 text-muted-foreground hover:text-red-600 transition-colors"
                 >
                   <Trash2 size={13} />
                 </button>
@@ -1091,10 +1091,10 @@ function AccessCodeSection() {
                       className={cn(
                         "text-[10px] font-mono font-semibold border rounded px-1.5 py-0.5",
                         c.role === "facility"
-                          ? "bg-violet-500/15 text-violet-400 border-violet-500/20"
+                          ? "bg-violet-100 text-violet-700 border-violet-200"
                           : c.role === "admin"
-                          ? "bg-rose-500/15 text-rose-400 border-rose-500/20"
-                          : "bg-cyan-500/15 text-cyan-400 border-cyan-500/20"
+                          ? "bg-rose-100 text-rose-700 border-rose-200"
+                          : "bg-teal-100 text-teal-700 border-teal-200"
                       )}
                     >
                       {c.role}
@@ -1120,7 +1120,7 @@ function AccessCodeSection() {
                 </div>
                 <button
                   onClick={() => handleDelete(c.id)}
-                  className="p-1.5 text-muted-foreground hover:text-red-400 transition-colors"
+                  className="p-1.5 text-muted-foreground hover:text-red-600 transition-colors"
                 >
                   <Trash2 size={13} />
                 </button>
