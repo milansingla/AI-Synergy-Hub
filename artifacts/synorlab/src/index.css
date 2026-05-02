@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Alexandria:wght@300;400;600;700;800;900&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 @plugin "@tailwindcss/typography";
@@ -74,60 +75,60 @@
   --elevate-1: rgba(0,0,0,.03);
   --elevate-2: rgba(0,0,0,.06);
 
-  /* Synorlab — Luno-inspired light theme */
-  /* Background: #F4F7F6 */
-  --background: 160 16% 96%;
-  /* Foreground: #363535 */
-  --foreground: 0 2% 21%;
+  /* Synorlab — white + orange theme */
+  /* Background: pure white */
+  --background: 0 0% 100%;
+  /* Foreground: near-black */
+  --foreground: 0 2% 14%;
 
   /* Card: white */
   --card: 0 0% 100%;
-  --card-foreground: 0 2% 21%;
-  --card-border: 36 12% 90%;
+  --card-foreground: 0 2% 14%;
+  --card-border: 30 10% 91%;
 
   --popover: 0 0% 100%;
-  --popover-foreground: 0 2% 21%;
-  --popover-border: 36 12% 90%;
+  --popover-foreground: 0 2% 14%;
+  --popover-border: 30 10% 91%;
 
-  /* Primary: #00AC9A teal */
-  --primary: 174 100% 34%;
+  /* Primary: #ED6C00 orange */
+  --primary: 27 100% 46%;
   --primary-foreground: 0 0% 100%;
 
-  /* Secondary: light gray */
-  --secondary: 160 12% 92%;
-  --secondary-foreground: 0 2% 28%;
+  /* Secondary: light warm gray */
+  --secondary: 30 10% 94%;
+  --secondary-foreground: 0 2% 25%;
 
-  /* Muted: very light gray */
-  --muted: 160 10% 93%;
-  --muted-foreground: 0 1% 48%;
+  /* Muted: very light warm gray */
+  --muted: 30 8% 95%;
+  --muted-foreground: 0 1% 46%;
 
-  /* Accent: pale teal */
-  --accent: 174 45% 92%;
-  --accent-foreground: 174 100% 28%;
+  /* Accent: pale orange */
+  --accent: 27 80% 93%;
+  --accent-foreground: 27 100% 34%;
 
   --destructive: 0 72% 51%;
   --destructive-foreground: 0 0% 100%;
 
-  /* Border: #E9E6E1 warm gray */
-  --border: 36 12% 90%;
+  /* Border: warm gray */
+  --border: 30 10% 91%;
   --input: 0 0% 100%;
-  --ring: 174 100% 34%;
+  --ring: 27 100% 46%;
 
-  --chart-1: 174 100% 34%;
+  --chart-1: 27 100% 46%;
   --chart-2: 207 80% 54%;
   --chart-3: 145 55% 45%;
-  --chart-4: 35 90% 52%;
+  --chart-4: 174 100% 34%;
   --chart-5: 0 72% 51%;
 
-  /* Sidebar: clean white */
+  /* Sidebar: clean white + orange */
   --sidebar: 0 0% 100%;
-  --sidebar-foreground: 0 2% 21%;
-  --sidebar-border: 36 12% 90%;
-  --sidebar-primary: 174 100% 34%;
+  --sidebar-foreground: 0 2% 14%;
+  --sidebar-border: 30 10% 91%;
+  --sidebar-primary: 27 100% 46%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 174 40% 93%;
-  --sidebar-accent-foreground: 174 100% 26%;
-  --sidebar-ring: 174 100% 34%;
+  --sidebar-accent: 27 70% 94%;
+  --sidebar-accent-foreground: 27 100% 36%;
+  --sidebar-ring: 27 100% 46%;
 
   --app-font-sans: 'Nunito', sans-serif;
   --app-font-serif: Georgia, serif;

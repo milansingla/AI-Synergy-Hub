@@ -1,0 +1,157 @@
+{
+  "colorScheme": "light",
+  "fonts": [
+    {
+      "family": "Ryo Gothic PlusN",
+      "role": "body"
+    },
+    {
+      "family": "Helvetica Neue",
+      "role": "body"
+    },
+    {
+      "family": "Hiragino Kaku Gothic ProN",
+      "role": "body"
+    },
+    {
+      "family": "Meiryo",
+      "role": "body"
+    },
+    {
+      "family": "Alexandria",
+      "role": "unknown"
+    }
+  ],
+  "colors": {
+    "primary": "#2639A6",
+    "accent": "#ED6C00",
+    "background": "#FFFFFF",
+    "textPrimary": "#ED6C00",
+    "link": "#ED6C00"
+  },
+  "typography": {
+    "fontFamilies": {
+      "primary": "Ryo Gothic PlusN",
+      "heading": "Ryo Gothic PlusN"
+    },
+    "fontStacks": {
+      "heading": [
+        "ryo-gothic-plusn",
+        "sans-serif",
+        "Helvetica Neue",
+        "Arial",
+        "Hiragino Kaku Gothic ProN",
+        "Hiragino Sans",
+        "Meiryo"
+      ],
+      "body": [
+        "ryo-gothic-plusn",
+        "sans-serif",
+        "Helvetica Neue",
+        "Arial",
+        "Hiragino Kaku Gothic ProN",
+        "Hiragino Sans",
+        "Meiryo"
+      ],
+      "paragraph": [
+        "ryo-gothic-plusn",
+        "sans-serif",
+        "Helvetica Neue",
+        "Arial",
+        "Hiragino Kaku Gothic ProN",
+        "Hiragino Sans",
+        "Meiryo"
+      ]
+    },
+    "fontSizes": {
+      "h1": "11.9062px",
+      "h2": "106.215px",
+      "body": "11.9062px"
+    }
+  },
+  "spacing": {
+    "baseUnit": 4,
+    "borderRadius": "24px"
+  },
+  "components": {
+    "buttonPrimary": {
+      "background": "#ED6C00",
+      "textColor": "#FFFFFF",
+      "borderRadius": "0px",
+      "borderRadiusCorners": {
+        "topLeft": "0px",
+        "topRight": "0px",
+        "bottomRight": "0px",
+        "bottomLeft": "0px"
+      },
+      "shadow": "none"
+    },
+    "buttonSecondary": {
+      "background": "#FFFFFF",
+      "textColor": "#ED6C00",
+      "borderColor": "#ED6C00",
+      "borderRadius": "100000px",
+      "borderRadiusCorners": {
+        "topLeft": "100000px",
+        "topRight": "100000px",
+        "bottomRight": "100000px",
+        "bottomLeft": "100000px"
+      },
+      "shadow": "none"
+    }
+  },
+  "images": {
+    "favicon": "https://media-arts.ac.jp/ma_cms/wp-content/themes/media-arts/favicon.ico",
+    "ogImage": "https://media-arts.ac.jp/ma_cms/wp-content/themes/media-arts/ogp.png?1.0",
+    "logoHref": "https://media-arts.ac.jp/"
+  },
+  "__llm_logo_reasoning": {
+    "selectedIndex": 0,
+    "reasoning": "Selected #0 because it is visible, located in the header, links to the homepage, and matches the brand inferred from the page title and URL.",
+    "confidence": 0.9,
+    "source": "llm"
+  },
+  "__llm_button_reasoning": {
+    "primary": {
+      "index": 0,
+      "text": "Scroll Down\n                        Scroll Down",
+      "reasoning": "Button #4 has a vibrant brand color (#ED6C00) and action-oriented text ('Scroll Down'), making it a strong candidate for the primary CTA."
+    },
+    "secondary": {
+      "index": 31,
+      "text": "View More\n            View More",
+      "reasoning": "Button #2 has a different background color (#FFFFFF) with a border and text color matching the brand accent (#ED6C00), making it suitable as a secondary CTA."
+    },
+    "confidence": 0.95
+  },
+  "personality": {
+    "tone": "modern",
+    "energy": "medium",
+    "targetAudience": "students interested in media arts and design"
+  },
+  "designSystem": {
+    "framework": "custom",
+    "componentLibrary": ""
+  },
+  "confidence": {
+    "buttons": 0.95,
+    "colors": 0.9,
+    "overall": 0.925
+  },
+  "__llm_metadata": {
+    "logoSelection": {
+      "llmCalled": true,
+      "llmSucceeded": true,
+      "finalSource": "llm",
+      "rawLogoSelection": {
+        "selectedLogoIndex": 0,
+        "selectedLogoReasoning": "Selected #0 because it is visible, located in the header, links to the homepage, and matches the brand inferred from the page title and URL.",
+        "confidence": 0.9
+      }
+    },
+    "buttonClassification": {
+      "llmCalled": true,
+      "llmSucceeded": true
+    }
+  }
+}
