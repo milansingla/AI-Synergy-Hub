@@ -20,25 +20,26 @@ import ProfileSetup from "@/pages/profile-setup";
 
 const queryClient = new QueryClient();
 
+const Spinner = () => (
+  <div className="min-h-screen flex items-center justify-center bg-background">
+    <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+  </div>
+);
+
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isSignedIn, isLoaded } = useAuth();
   const { data: profile, isLoading: profileLoading } = useGetUserProfile();
   const [, navigate] = useLocation();
 
-  if (!isLoaded || (isSignedIn && profileLoading)) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-  if (!isSignedIn) return <RedirectToSignIn />;
+  const needsSetup = isSignedIn && profile != null && !profile.profileCompleted;
 
-  // Gate: redirect to profile setup if profile not completed
-  if (profile && !profile.profileCompleted) {
-    navigate("/profile-setup", { replace: true });
-    return null;
-  }
+  useEffect(() => {
+    if (needsSetup) navigate("/profile-setup", { replace: true });
+  }, [needsSetup, navigate]);
+
+  if (!isLoaded || (isSignedIn && profileLoading)) return <Spinner />;
+  if (!isSignedIn) return <RedirectToSignIn />;
+  if (needsSetup) return <Spinner />;
 
   return <>{children}</>;
 }
@@ -48,18 +49,16 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
   const { data: profile, isLoading: profileLoading } = useGetUserProfile();
   const [, navigate] = useLocation();
 
-  if (!isLoaded || profileLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
+  const notAdmin = isSignedIn && profile != null && profile.role !== "admin";
+
+  useEffect(() => {
+    if (notAdmin) navigate("/dashboard", { replace: true });
+  }, [notAdmin, navigate]);
+
+  if (!isLoaded || profileLoading) return <Spinner />;
   if (!isSignedIn) return <RedirectToSignIn />;
-  if (profile && profile.role !== "admin") {
-    navigate("/dashboard");
-    return null;
-  }
+  if (notAdmin) return <Spinner />;
+
   return <>{children}</>;
 }
 
@@ -68,19 +67,36 @@ function FacilityRoute({ children }: { children: React.ReactNode }) {
   const { data: profile, isLoading: profileLoading } = useGetUserProfile();
   const [, navigate] = useLocation();
 
-  if (!isLoaded || profileLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
+  const notFacility =
+    isSignedIn && profile != null && profile.role !== "facility" && profile.role !== "admin";
+
+  useEffect(() => {
+    if (notFacility) navigate("/dashboard", { replace: true });
+  }, [notFacility, navigate]);
+
+  if (!isLoaded || profileLoading) return <Spinner />;
   if (!isSignedIn) return <RedirectToSignIn />;
-  if (profile && profile.role !== "facility" && profile.role !== "admin") {
-    navigate("/dashboard");
-    return null;
-  }
+  if (notFacility) return <Spinner />;
+
   return <>{children}</>;
+}
+
+function ProfileSetupRoute() {
+  const { isSignedIn, isLoaded } = useAuth();
+  const { data: profile, isLoading: profileLoading } = useGetUserProfile();
+  const [, navigate] = useLocation();
+
+  const alreadyDone = isSignedIn && profile?.profileCompleted;
+
+  useEffect(() => {
+    if (alreadyDone) navigate("/dashboard", { replace: true });
+  }, [alreadyDone, navigate]);
+
+  if (!isLoaded || (isSignedIn && profileLoading)) return <Spinner />;
+  if (!isSignedIn) return <RedirectToSignIn />;
+  if (alreadyDone) return <Spinner />;
+
+  return <ProfileSetup />;
 }
 
 function AppRoutes() {
@@ -110,7 +126,6 @@ function AppRoutes() {
         </div>
       </Route>
 
-      {/* Profile setup — auth required but no profile gate (it IS the gate destination) */}
       <Route path="/profile-setup">
         <ProfileSetupRoute />
       </Route>
@@ -154,27 +169,6 @@ function AppRoutes() {
       <Route component={NotFound} />
     </Switch>
   );
-}
-
-function ProfileSetupRoute() {
-  const { isSignedIn, isLoaded } = useAuth();
-  const { data: profile, isLoading: profileLoading } = useGetUserProfile();
-  const [, navigate] = useLocation();
-
-  if (!isLoaded || (isSignedIn && profileLoading)) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-  if (!isSignedIn) return <RedirectToSignIn />;
-  // Already completed — skip to dashboard
-  if (profile?.profileCompleted) {
-    navigate("/dashboard", { replace: true });
-    return null;
-  }
-  return <ProfileSetup />;
 }
 
 function ClerkWrappedApp() {
