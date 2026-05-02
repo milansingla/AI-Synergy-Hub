@@ -259,36 +259,42 @@ Currently delivering: Q${answeredCount + 1}.`;
 
 /* ─── Evaluate interview ─────────────────────────────────────────────────── */
 
-const EVALUATION_DIMENSIONS: Array<{ dimension: string; weight: number; description: string }> = [
+const EVALUATION_DIMENSIONS: Array<{ dimension: string; weight: number; description: string; bar: string }> = [
   {
     dimension: "Technical & Domain Knowledge",
-    weight: 25,
-    description: "Depth and accuracy of technical knowledge specific to the role's requirements — tools, frameworks, processes, and domain concepts explicitly mentioned in the JD.",
+    weight: 30,
+    description: "Depth and accuracy of technical knowledge specific to the role — tools, frameworks, architectures, and domain concepts explicitly named in the JD. Generic answers that do not reference the JD's specific stack score low.",
+    bar: "Candidate must name specific technologies from the JD and explain how and why they would use them. Superficial or textbook-level definitions are insufficient.",
   },
   {
     dimension: "Communication & Articulation",
-    weight: 20,
-    description: "Clarity, structure, and professionalism of communication. Ability to explain complex ideas clearly, use appropriate terminology, and maintain a professional register throughout.",
+    weight: 15,
+    description: "Clarity, structure, and professionalism. Ability to explain complex ideas concisely, maintain a logical thread, and use precise terminology without jargon overload.",
+    bar: "Rambling, unclear, or one-sentence answers score 40 or below. Strong answers are structured, specific, and professional.",
   },
   {
     dimension: "Problem-Solving & Analytical Thinking",
     weight: 20,
-    description: "Ability to break down complex problems, reason logically, draw on data or experience, and arrive at sound conclusions. Demonstrated through situational and technical answers.",
+    description: "Ability to decompose real problems, reason through trade-offs, and propose data-driven solutions. Evaluated through situational and technical responses.",
+    bar: "The candidate must walk through their reasoning step by step. Stating a conclusion without reasoning scores below 50.",
   },
   {
-    dimension: "Behavioural Competencies",
-    weight: 15,
-    description: "Quality of behavioural examples using the STAR method. Evidence of ownership, initiative, collaboration, and results-orientation in past roles.",
+    dimension: "Behavioural Competencies & STAR Quality",
+    weight: 20,
+    description: "Quality of behavioural examples. Must follow STAR (Situation, Task, Action, Result) with quantifiable results. Evidence of ownership, initiative, and delivery.",
+    bar: "No STAR structure: cap at 55. Vague stories with no concrete result: cap at 45. Strong answers quantify the impact (e.g. 'reduced latency by 40%').",
   },
   {
     dimension: "Cultural Fit & Professional Attitude",
     weight: 10,
-    description: "Enthusiasm for the role and company, growth mindset, professionalism, and alignment with values. Assessed through tone, motivation, and the quality of questions asked.",
+    description: "Genuine enthusiasm for THIS specific role and company, growth mindset, professionalism throughout. Assessed through motivation quality and questions asked.",
+    bar: "Generic answers ('I want to grow') score below 50. Strong answers reference company-specific context from the JD.",
   },
   {
     dimension: "Role & Company Alignment",
-    weight: 10,
-    description: "How well the candidate's stated goals, experience, and motivation align with the specific responsibilities and expectations of this role at this company.",
+    weight: 5,
+    description: "Degree to which the candidate's stated experience, goals, and motivation directly map to the specific responsibilities and expectations in this JD.",
+    bar: "The candidate must connect their background to at least 2 specific responsibilities from the JD. Failure to do so scores below 55.",
   },
 ];
 
@@ -308,54 +314,97 @@ export async function evaluateInterview(
 
   const companyLine = jd.company ? ` at ${jd.company}` : "";
   const dimensionsText = EVALUATION_DIMENSIONS.map(
-    (d, i) => `${i + 1}. "${d.dimension}" (weight: ${d.weight}%): ${d.description}`
-  ).join("\n");
+    (d, i) =>
+      `${i + 1}. "${d.dimension}" (weight: ${d.weight}%)\n   What it measures: ${d.description}\n   Minimum bar: ${d.bar}`
+  ).join("\n\n");
 
   const response = await openai.chat.completions.create({
     model: "gpt-4o",
+    temperature: 0,
     max_completion_tokens: 4096,
     messages: [
       {
         role: "system",
-        content: `You are a senior hiring manager at a top-tier company evaluating a candidate interview. Apply rigorous, objective evaluation criteria aligned with both global top-company HR standards (FAANG-level competency frameworks) and Indian corporate HR standards. Be fair but precise — do not inflate scores. Return valid JSON only, no markdown.`,
+        content: `You are a principal-level hiring evaluator at a highly selective technology company (think Google, Stripe, or a top Indian unicorn). Your evaluations are used to make binding hiring decisions. You have zero tolerance for score inflation — you will be held accountable if you give unjustifiably high scores. Your job is to evaluate the interview transcript with absolute precision and rigor.
+
+CORE PRINCIPLE: Most candidates who complete an interview do NOT perform well enough to hire. A score of 65-75 already represents a reasonably strong candidate. Scores above 82 are reserved for genuinely impressive performances that stand out clearly. A 90+ interview is exceptional — perhaps 1 in 30 well-prepared candidates.
+
+Return valid JSON only. No markdown, no code blocks.`,
       },
       {
         role: "user",
         content: `Evaluate this complete interview for the ${jd.role} role${companyLine}.
 
-JOB CONTEXT:
-- Required skills: ${jd.skills.join(", ")}
-- Experience level: ${jd.experienceLevel}
-- Core responsibilities:
+════════════════════════════════════════
+JOB CONTEXT
+════════════════════════════════════════
+Required skills: ${jd.skills.join(", ")}
+Experience level: ${jd.experienceLevel}
+Core responsibilities:
 ${jd.responsibilities.map((r) => `  • ${r}`).join("\n")}
 
 Full Job Description:
 ---
-${jd.rawText.slice(0, 1500)}
+${jd.rawText.slice(0, 2000)}
 ---
 
-INTERVIEW TRANSCRIPT:
+════════════════════════════════════════
+INTERVIEW TRANSCRIPT
+════════════════════════════════════════
 ${qaText}
 
-EVALUATION FRAMEWORK — score each of these 6 dimensions 0-100:
+════════════════════════════════════════
+EVALUATION DIMENSIONS (score each 0-100)
+════════════════════════════════════════
 ${dimensionsText}
 
-SCORING GUIDANCE (apply strictly):
-- 90-100: Exceptional — exceeds all expectations, would be a top hire
-- 75-89:  Strong — meets all key requirements with evidence
-- 60-74:  Adequate — meets most requirements, some gaps
-- 40-59:  Developing — significant gaps relative to role requirements
-- 0-39:   Insufficient — does not demonstrate required competencies
+════════════════════════════════════════
+MANDATORY SCORING PROTOCOL — READ CAREFULLY
+════════════════════════════════════════
 
-Compute overallScore as the weighted average across all 6 dimensions.
+SCORE BANDS (non-negotiable):
+• 90-100 — WORLD CLASS. Every single answer was specific, impressive, and demonstrated mastery well beyond what the role requires. Near-perfect STAR structure, deep technical precision, and strategic insight. Expect this band for roughly 1 in 30+ exceptional candidates.
+• 80-89  — STRONG HIRE. Clear mastery of the JD's core requirements, concrete examples, correct technical depth, near-complete STAR answers. Top 10% of candidates.
+• 68-79  — CONDITIONAL HIRE. Meets baseline requirements in most areas. 1-2 notable gaps or missed opportunities but solid overall. Middle tier of qualified candidates.
+• 52-67  — BELOW BAR. Multiple vague, surface-level, or incomplete answers. Would need significant gaps filled before hire. Hold or re-interview.
+• 35-51  — WEAK. Frequent gaps in core competencies, incorrect technical answers, or failure to provide credible examples.
+• 0-34   — NO HIRE. Did not demonstrate the minimum competencies for this role.
 
-Return a JSON object with:
-- "overallScore": weighted average score (0-100, integer)
-- "feedback": 3-4 sentence hiring summary paragraph — specific to this role and company, referencing actual answers given
-- "strengths": array of exactly 3 specific strengths, each starting with the dimension name, e.g. "Technical Knowledge: Demonstrated strong proficiency in..."
-- "improvements": array of exactly 3 specific, actionable improvement areas tied to JD requirements
-- "criteriaScores": array of 6 objects, each with: { "dimension": string, "score": integer 0-100, "weight": number, "feedback": string (1-2 sentences specific to their answers) }
-- "questionEvals": array of objects, one per Q&A pair, each with: { "question": string, "answer": string, "score": integer 0-100, "feedback": string (specific to JD requirements), "idealAnswer": string (what a strong candidate would have said for THIS role) }
+CALIBRATION REFERENCE (use these anchors):
+• A score of 70 = "Solid candidate who mostly answered correctly with specific examples, but had 1-2 vague or shallow answers."
+• A score of 80 = "Consistently strong answers across all phases, specific technical knowledge, well-structured STAR answers with measurable results."
+• A score of 90 = "Exceptional — virtually every answer was impressive, deep, and went beyond what was asked."
+• Most candidates who prepared adequately should land in the 55-72 range.
+
+MANDATORY DEDUCTIONS (apply these to individual question scores first):
+1. Vague or generic answer with no specific examples or details: −25 to −35 pts on that question
+2. Behavioral question answered without any STAR structure: −20 pts
+3. Technically incorrect information: −30 to −45 pts
+4. Answer is a single sentence or fewer than 2 meaningful sentences: −25 pts
+5. Evasive, deflecting, or off-topic answer: cap the question at 30
+6. Same real-world example reused across 2+ different questions: −10 pts per repeated use (after first use)
+7. Asked for clarification on a straightforward question without attempting an answer: −10 pts
+
+ANTI-INFLATION RULE: If your draft overallScore is above 75, challenge yourself — can you justify every point above 75 with specific evidence from the transcript? If not, reduce accordingly.
+
+════════════════════════════════════════
+REQUIRED OUTPUT FORMAT
+════════════════════════════════════════
+Return a single JSON object with these exact keys:
+
+- "overallScore": true weighted average of the 6 dimension scores (integer 0-100)
+- "hiringVerdict": one of exactly: "Strong Hire" | "Hire" | "Hold" | "No Hire"
+  • "Strong Hire" only if overallScore ≥ 85
+  • "Hire" if overallScore 70-84
+  • "Hold" if overallScore 50-69
+  • "No Hire" if overallScore < 50
+- "feedback": 3-4 sentences. A precise hiring recommendation paragraph that references specific answers from the transcript. State clearly whether this candidate should advance and why.
+- "strengths": array of exactly 3 items. Each must start with a dimension name and cite a specific answer. e.g. "Technical Knowledge: Correctly explained the trade-offs between X and Y when asked about..."
+- "improvements": array of exactly 3 items. Each must be actionable and tied to a specific gap observed in the transcript.
+- "criteriaScores": array of 6 objects:
+  { "dimension": string, "score": integer 0-100, "weight": number, "feedback": string (2 sentences — cite a specific answer and explain the score) }
+- "questionEvals": array of objects, one per Q&A pair:
+  { "question": string, "answer": string, "score": integer 0-100, "feedback": string (cite what was said and what was missing), "idealAnswer": string (what a strong ${jd.experienceLevel} candidate should have said specifically for this role and JD) }
 
 Return only valid JSON, no markdown, no code blocks.`,
       },
@@ -367,7 +416,7 @@ Return only valid JSON, no markdown, no code blocks.`,
     return JSON.parse(content) as FullEvaluation;
   } catch {
     return {
-      overallScore: 50,
+      overallScore: 0,
       feedback: "Unable to generate evaluation.",
       strengths: [],
       improvements: [],

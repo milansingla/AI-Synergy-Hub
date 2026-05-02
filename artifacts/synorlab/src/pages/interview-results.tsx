@@ -13,14 +13,31 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+/* ─── Score helpers ─────────────────────────────────────────────────────────── */
+function scoreColor(score: number): string {
+  if (score >= 85) return "#4ade80";
+  if (score >= 70) return "#34d399";
+  if (score >= 55) return "#facc15";
+  if (score >= 38) return "#fb923c";
+  return "#f87171";
+}
+
+function verdictFromScore(score: number): { label: string; color: string; bg: string; border: string; description: string } {
+  if (score >= 85) return { label: "Strong Hire", color: "#4ade80", bg: "#4ade8015", border: "#4ade8040", description: "Top-tier performance. Recommend advancing immediately." };
+  if (score >= 70) return { label: "Hire", color: "#34d399", bg: "#34d39915", border: "#34d39940", description: "Meets the bar. Recommend proceeding to next round." };
+  if (score >= 55) return { label: "Hold", color: "#facc15", bg: "#facc1515", border: "#facc1540", description: "Below the hiring bar. Consider a follow-up interview." };
+  if (score >= 38) return { label: "Weak", color: "#fb923c", bg: "#fb923c15", border: "#fb923c40", description: "Significant gaps identified. Does not recommend hire." };
+  return { label: "No Hire", color: "#f87171", bg: "#f8717115", border: "#f8717140", description: "Failed to demonstrate minimum competencies for this role." };
+}
+
 /* ─── Score ring ────────────────────────────────────────────────────────────── */
 function ScoreRing({ score }: { score: number }) {
-  const color = score >= 80 ? "#4ade80" : score >= 60 ? "#facc15" : score >= 40 ? "#fb923c" : "#f87171";
+  const color = scoreColor(score);
   const size = 112;
   const r = 44;
   const c = 2 * Math.PI * r;
   const offset = c - (score / 100) * c;
-  const label = score >= 80 ? "Strong Hire" : score >= 60 ? "Potential Hire" : score >= 40 ? "Developing" : "Not Yet Ready";
+  const verdict = verdictFromScore(score);
 
   return (
     <div className="flex flex-col items-center gap-2">
@@ -34,8 +51,8 @@ function ScoreRing({ score }: { score: number }) {
         </svg>
         <span className="absolute text-2xl font-bold font-mono" style={{ color }}>{score}</span>
       </div>
-      <span className="text-xs font-semibold px-3 py-1 rounded-full border" style={{ color, borderColor: `${color}40`, backgroundColor: `${color}15` }}>
-        {label}
+      <span className="text-xs font-semibold px-3 py-1 rounded-full border" style={{ color, borderColor: verdict.border, backgroundColor: verdict.bg }}>
+        {verdict.label}
       </span>
     </div>
   );
