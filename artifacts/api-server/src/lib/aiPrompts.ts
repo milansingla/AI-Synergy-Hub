@@ -2,8 +2,10 @@ import { openai } from "@workspace/integrations-openai-ai-server";
 
 export interface ParsedJD {
   role: string;
+  company: string;
   skills: string[];
   experienceLevel: string;
+  responsibilities: string[];
 }
 
 export interface QuestionSet {
@@ -11,12 +13,6 @@ export interface QuestionSet {
   behavioral: string[];
   situational: string[];
   all: string[];
-}
-
-export interface AnswerEvaluation {
-  score: number;
-  feedback: string;
-  idealAnswer: string;
 }
 
 export interface FullEvaluation {
@@ -33,6 +29,8 @@ export interface FullEvaluation {
   }>;
 }
 
+/* ─── Parse JD ─────────────────────────────────────────────────────────────── */
+
 export async function parseJD(jdText: string): Promise<ParsedJD> {
   const response = await openai.chat.completions.create({
     model: "gpt-4o",
@@ -40,14 +38,16 @@ export async function parseJD(jdText: string): Promise<ParsedJD> {
     messages: [
       {
         role: "system",
-        content: `You are an expert job description parser. Extract the key information from the job description and return it as valid JSON only, with no markdown formatting or code blocks.`,
+        content: `You are an expert job description parser. Extract structured data from the job description and return valid JSON only — no markdown, no code blocks.`,
       },
       {
         role: "user",
         content: `Parse this job description and return a JSON object with these exact fields:
-- "role": the job title/role (string)
-- "skills": array of key technical and soft skills required (array of strings, max 10)
-- "experienceLevel": one of "junior", "mid-level", "senior", "lead" based on the requirements
+- "role": the exact job title/position (string)
+- "company": the company name if mentioned, otherwise "" (string)
+- "skills": array of specific technical and soft skills required — include exact technologies, frameworks, tools mentioned (array of strings, max 12)
+- "experienceLevel": one of "junior", "mid-level", "senior", "lead" based on requirements
+- "responsibilities": array of the 5 most important responsibilities/duties mentioned (array of strings)
 
 Job Description:
 ${jdText}
@@ -61,30 +61,52 @@ Return only valid JSON, no markdown, no code blocks.`,
   try {
     return JSON.parse(content) as ParsedJD;
   } catch {
-    return { role: "Software Engineer", skills: [], experienceLevel: "mid-level" };
+    return { role: "Software Engineer", company: "", skills: [], experienceLevel: "mid-level", responsibilities: [] };
   }
 }
 
-export async function generateQuestions(parsedJD: ParsedJD): Promise<QuestionSet> {
+/* ─── Generate question set ─────────────────────────────────────────────── */
+
+export async function generateQuestions(jd: {
+  role: string;
+  company: string;
+  skills: string[];
+  experienceLevel: string;
+  responsibilities: string[];
+  rawText: string;
+}): Promise<QuestionSet> {
+  const companyLine = jd.company ? `Company: ${jd.company}` : "";
+
   const response = await openai.chat.completions.create({
     model: "gpt-4o",
     max_completion_tokens: 2048,
     messages: [
       {
         role: "system",
-        content: `You are an expert technical interviewer. Generate targeted interview questions based on the job description. Return valid JSON only with no markdown formatting.`,
+        content: `You are a senior technical interviewer. Generate highly specific, targeted interview questions that are deeply tied to the exact job description provided. Questions must reference specific technologies, responsibilities, and context from the JD — not generic interview questions. Return valid JSON only.`,
       },
       {
         role: "user",
-        content: `Generate interview questions for this role:
-Role: ${parsedJD.role}
-Skills: ${parsedJD.skills.join(", ")}
-Experience Level: ${parsedJD.experienceLevel}
+        content: `Generate interview questions for this specific role.
+
+Role: ${jd.role}
+${companyLine}
+Experience Level: ${jd.experienceLevel}
+Required Skills: ${jd.skills.join(", ")}
+Key Responsibilities:
+${jd.responsibilities.map((r, i) => `${i + 1}. ${r}`).join("\n")}
+
+Full Job Description (use this for context and specificity):
+---
+${jd.rawText}
+---
+
+Generate questions that are SPECIFIC to this exact role and company. Reference the actual tools, technologies, team structure, and responsibilities mentioned in the JD. Do NOT ask generic questions.
 
 Return a JSON object with exactly these fields:
-- "technical": array of 5 technical questions
-- "behavioral": array of 3 behavioral questions (using STAR format)
-- "situational": array of 2 situational/scenario-based questions
+- "technical": array of 5 technical questions — each must reference a specific technology, tool, or scenario from this JD
+- "behavioral": array of 3 behavioral questions (STAR format) — framed around the specific responsibilities and team context of this role
+- "situational": array of 2 situational questions — based on real challenges someone in THIS role at THIS company would face
 
 Return only valid JSON, no markdown, no code blocks.`,
       },
@@ -103,38 +125,57 @@ Return only valid JSON, no markdown, no code blocks.`,
   }
 }
 
+/* ─── Get next question ─────────────────────────────────────────────────── */
+
 export async function getNextQuestion(
-  role: string,
-  skills: string[],
+  jd: {
+    role: string;
+    company: string;
+    skills: string[];
+    experienceLevel: string;
+    responsibilities: string[];
+    rawText: string;
+  },
   conversationHistory: Array<{ role: "ai" | "user"; content: string }>,
   questionPool: string[],
   answeredCount: number
 ): Promise<{ content: string; isComplete: boolean }> {
-  const totalQuestions = questionPool.length;
-  if (answeredCount >= totalQuestions) {
+  if (answeredCount >= questionPool.length) {
     return {
       content: "Thank you for completing the interview. I have gathered enough information to evaluate your performance. The interview is now complete.",
       isComplete: true,
     };
   }
 
-  const systemPrompt = `You are Synorlab Interviewer, a professional hiring manager conducting a structured interview for the role of ${role}. 
+  const companyCtx = jd.company
+    ? `You are interviewing a candidate for the ${jd.role} role at ${jd.company}.`
+    : `You are interviewing a candidate for the ${jd.role} role.`;
 
-Key skills being assessed: ${skills.join(", ")}
+  const systemPrompt = `You are a professional hiring manager conducting a structured interview. ${companyCtx}
+
+Job context:
+- Role: ${jd.role}${jd.company ? `\n- Company: ${jd.company}` : ""}
+- Experience level sought: ${jd.experienceLevel}
+- Key skills being assessed: ${jd.skills.join(", ")}
+- Core responsibilities:
+${jd.responsibilities.map((r) => `  • ${r}`).join("\n")}
+
+Relevant job description excerpt:
+---
+${jd.rawText.slice(0, 1200)}
+---
 
 Interview guidelines:
-- Ask exactly ONE question at a time
-- Do NOT give away answers or hints
-- Acknowledge the candidate's answer briefly before asking the next question
-- Adapt your tone based on their responses
-- You have ${totalQuestions - answeredCount} questions remaining
-- Ask the next question from the provided question pool
-- Keep your response concise and professional
+- Ask exactly ONE question at a time from the question pool
+- Keep questions grounded in the actual role and company context above
+- Acknowledge the candidate's previous answer briefly and naturally before moving on
+- Do NOT give hints or correct the candidate
+- Reference specific technologies, responsibilities, or scenarios from the JD when relevant
+- You have ${questionPool.length - answeredCount} questions remaining (currently on question ${answeredCount + 1} of ${questionPool.length})
+- Keep responses concise and professional
 
-Question pool (ask them in order):
-${questionPool.map((q, i) => `${i + 1}. ${q}`).join("\n")}
-
-Currently on question ${answeredCount + 1} of ${totalQuestions}.`;
+Question pool — ask in order:
+${questionPool.map((q, i) => `${i + 1}. ${q}`).join("\n")}`;
 
   const messages = conversationHistory.map((msg) => ({
     role: msg.role === "ai" ? ("assistant" as const) : ("user" as const),
@@ -148,12 +189,7 @@ Currently on question ${answeredCount + 1} of ${totalQuestions}.`;
       { role: "system", content: systemPrompt },
       ...messages,
       ...(conversationHistory.length === 0
-        ? [
-            {
-              role: "user" as const,
-              content: "Please start the interview.",
-            },
-          ]
+        ? [{ role: "user" as const, content: "Please start the interview." }]
         : []),
     ],
   });
@@ -164,9 +200,16 @@ Currently on question ${answeredCount + 1} of ${totalQuestions}.`;
   };
 }
 
+/* ─── Evaluate interview ────────────────────────────────────────────────── */
+
 export async function evaluateInterview(
-  role: string,
-  skills: string[],
+  jd: {
+    role: string;
+    company: string;
+    skills: string[];
+    responsibilities: string[];
+    rawText: string;
+  },
   conversationHistory: Array<{ role: "ai" | "user"; content: string }>
 ): Promise<FullEvaluation> {
   const qaText = conversationHistory
@@ -179,31 +222,49 @@ export async function evaluateInterview(
     .map((qa, i) => `Q${i + 1}: ${qa.q}\nA${i + 1}: ${qa.a}`)
     .join("\n\n");
 
+  const companyLine = jd.company ? ` at ${jd.company}` : "";
+
   const response = await openai.chat.completions.create({
     model: "gpt-4o",
     max_completion_tokens: 4096,
     messages: [
       {
         role: "system",
-        content: `You are a senior hiring manager evaluating a candidate interview. Provide detailed, constructive feedback. Return valid JSON only with no markdown formatting.`,
+        content: `You are a senior hiring manager evaluating a candidate for a specific role. Evaluate their answers in the context of the exact job description provided — assess whether they demonstrated knowledge of the specific technologies, tools, and responsibilities required. Return valid JSON only.`,
       },
       {
         role: "user",
-        content: `Evaluate this interview for the role of ${role} (skills: ${skills.join(", ")}):
+        content: `Evaluate this interview for the ${jd.role} role${companyLine}.
 
+Job context:
+- Required skills: ${jd.skills.join(", ")}
+- Core responsibilities:
+${jd.responsibilities.map((r) => `  • ${r}`).join("\n")}
+
+Full Job Description:
+---
+${jd.rawText.slice(0, 1500)}
+---
+
+Interview transcript:
 ${qaText}
 
+Score each answer against what this specific role actually requires. Consider:
+1. Did they demonstrate knowledge of the specific tools/technologies in the JD?
+2. Did their answers reflect an understanding of the actual responsibilities?
+3. Would their experience translate to success in this specific role${jd.company ? ` at ${jd.company}` : ""}?
+
 Return a JSON object with:
-- "overallScore": number from 1-10 (float allowed)
-- "feedback": overall summary paragraph
-- "strengths": array of 3 strengths
-- "improvements": array of 3 areas for improvement
+- "overallScore": number from 1-100 (integer)
+- "feedback": overall summary paragraph referencing the specific role requirements
+- "strengths": array of 3 specific strengths relevant to this role
+- "improvements": array of 3 specific improvement areas for this role
 - "questionEvals": array of objects, one per Q&A pair, each with:
   - "question": the question asked
   - "answer": the candidate's answer
-  - "score": number 1-10
-  - "feedback": specific feedback for this answer
-  - "idealAnswer": what an ideal answer would have included
+  - "score": number 1-100
+  - "feedback": specific feedback tied to the role requirements
+  - "idealAnswer": what an ideal answer would have included for this specific role
 
 Return only valid JSON, no markdown, no code blocks.`,
       },

@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Zap, ArrowRight, Briefcase, Layers, BarChart2 } from "lucide-react";
+import { Loader2, Zap, ArrowRight, Briefcase, Layers, BarChart2, Building2, ListChecks } from "lucide-react";
 import type { ParsedJD } from "@workspace/api-client-react";
 
 const schema = z.object({
@@ -50,13 +50,15 @@ export default function JDNew() {
     }
   };
 
+  const responsibilities = parsedJD ? (parsedJD.responsibilities as string[]) : [];
+
   return (
     <AppLayout>
       <div className="px-8 py-8 max-w-3xl">
         <div className="mb-8">
           <h1 className="text-2xl font-bold tracking-tight">Upload job description</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Paste a job description and we'll extract the role, skills, and generate tailored questions.
+            Paste a job description and we'll extract the role, company, skills, and generate highly targeted interview questions.
           </p>
         </div>
 
@@ -106,7 +108,8 @@ export default function JDNew() {
                 <span className="text-xs font-mono text-primary uppercase tracking-wider">Parsed successfully</span>
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-5">
+                {/* Role */}
                 <div className="flex items-start gap-3">
                   <Briefcase size={15} className="text-primary mt-0.5 shrink-0" />
                   <div>
@@ -115,6 +118,18 @@ export default function JDNew() {
                   </div>
                 </div>
 
+                {/* Company */}
+                {parsedJD.company && (
+                  <div className="flex items-start gap-3">
+                    <Building2 size={15} className="text-primary mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Company</p>
+                      <p className="font-semibold" data-testid="text-parsed-company">{parsedJD.company}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Experience level */}
                 <div className="flex items-start gap-3">
                   <BarChart2 size={15} className="text-primary mt-0.5 shrink-0" />
                   <div>
@@ -123,6 +138,7 @@ export default function JDNew() {
                   </div>
                 </div>
 
+                {/* Skills */}
                 <div className="flex items-start gap-3">
                   <Layers size={15} className="text-primary mt-0.5 shrink-0" />
                   <div>
@@ -141,7 +157,33 @@ export default function JDNew() {
                     </div>
                   </div>
                 </div>
+
+                {/* Responsibilities */}
+                {responsibilities.length > 0 && (
+                  <div className="flex items-start gap-3">
+                    <ListChecks size={15} className="text-primary mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-2">Key responsibilities</p>
+                      <ul className="space-y-1.5">
+                        {responsibilities.map((r, i) => (
+                          <li key={i} className="text-sm flex items-start gap-2">
+                            <span className="text-primary text-xs mt-0.5 shrink-0">•</span>
+                            <span>{r}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                )}
               </div>
+            </div>
+
+            {/* Interview quality callout */}
+            <div className="rounded-lg border border-border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+              Interview questions will be specifically tailored to{" "}
+              {parsedJD.company ? (
+                <span className="text-foreground font-medium">{parsedJD.company}</span>
+              ) : "this company"}'s requirements, referencing the exact responsibilities and technologies above.
             </div>
 
             {/* Actions */}

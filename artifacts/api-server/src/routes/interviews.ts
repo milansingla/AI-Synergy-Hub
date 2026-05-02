@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { getAuth } from "@clerk/express";
 import { db, usersTable, interviewsTable, interviewMessagesTable, jobDescriptionsTable, evaluationsTable } from "@workspace/db";
-import { eq, and, count, avg, desc } from "drizzle-orm";
+import { eq, and, count, desc } from "drizzle-orm";
 import { CreateInterviewBody, RespondToInterviewBody, GetInterviewParams, RespondToInterviewParams, CompleteInterviewParams } from "@workspace/api-zod";
 import { generateQuestions, getNextQuestion, evaluateInterview } from "../lib/aiPrompts";
 
@@ -23,6 +23,25 @@ const ensureUser = async (userId: string, auth: any) => {
   }
 };
 
+/** Build the full JD context object passed to every AI function */
+function jdContext(jd: {
+  role: string;
+  company: string;
+  skills: unknown;
+  experienceLevel: string;
+  responsibilities: unknown;
+  rawText: string;
+}) {
+  return {
+    role: jd.role,
+    company: jd.company ?? "",
+    skills: (jd.skills as string[]) ?? [],
+    experienceLevel: jd.experienceLevel,
+    responsibilities: (jd.responsibilities as string[]) ?? [],
+    rawText: jd.rawText,
+  };
+}
+
 // GET /api/interviews
 router.get("/interviews", requireAuth, async (req: any, res: any) => {
   try {
@@ -34,6 +53,7 @@ router.get("/interviews", requireAuth, async (req: any, res: any) => {
         status: interviewsTable.status,
         createdAt: interviewsTable.createdAt,
         role: jobDescriptionsTable.role,
+        company: jobDescriptionsTable.company,
       })
       .from(interviewsTable)
       .leftJoin(jobDescriptionsTable, eq(interviewsTable.jdId, jobDescriptionsTable.id))
@@ -55,6 +75,7 @@ router.get("/interviews", requireAuth, async (req: any, res: any) => {
           id: interview.id,
           jdId: interview.jdId,
           role: interview.role ?? "Unknown Role",
+          company: interview.company ?? "",
           status: interview.status,
           score: evaluation?.overallScore ?? null,
           messageCount: Number(msgCount?.count ?? 0),
@@ -90,8 +111,9 @@ router.post("/interviews", requireAuth, async (req: any, res: any) => {
       .values({ userId, jdId: parsed.data.jdId, status: "in_progress" })
       .returning();
 
-    const questions = await generateQuestions({ role: jd.role, skills: jd.skills as string[], experienceLevel: jd.experienceLevel });
-    const firstQuestion = await getNextQuestion(jd.role, jd.skills as string[], [], questions.all, 0);
+    const ctx = jdContext(jd);
+    const questions = await generateQuestions(ctx);
+    const firstQuestion = await getNextQuestion(ctx, [], questions.all, 0);
 
     await db.insert(interviewMessagesTable).values({
       interviewId: interview.id,
@@ -124,6 +146,7 @@ router.get("/interviews/stats", requireAuth, async (req: any, res: any) => {
         status: interviewsTable.status,
         createdAt: interviewsTable.createdAt,
         role: jobDescriptionsTable.role,
+        company: jobDescriptionsTable.company,
       })
       .from(interviewsTable)
       .leftJoin(jobDescriptionsTable, eq(interviewsTable.jdId, jobDescriptionsTable.id))
@@ -154,6 +177,7 @@ router.get("/interviews/stats", requireAuth, async (req: any, res: any) => {
           id: interview.id,
           jdId: interview.jdId,
           role: interview.role ?? "Unknown Role",
+          company: interview.company ?? "",
           status: interview.status,
           score: evaluation?.overallScore ?? null,
           messageCount: Number(msgCount?.count ?? 0),
@@ -190,6 +214,7 @@ router.get("/interviews/:id", requireAuth, async (req: any, res: any) => {
         status: interviewsTable.status,
         createdAt: interviewsTable.createdAt,
         role: jobDescriptionsTable.role,
+        company: jobDescriptionsTable.company,
         userId: interviewsTable.userId,
       })
       .from(interviewsTable)
@@ -214,6 +239,7 @@ router.get("/interviews/:id", requireAuth, async (req: any, res: any) => {
       id: interview.id,
       jdId: interview.jdId,
       role: interview.role ?? "Unknown Role",
+      company: interview.company ?? "",
       status: interview.status,
       messages: messages.map((m) => ({
         id: m.id,
@@ -290,27 +316,13 @@ router.post("/interviews/:id/respond", requireAuth, async (req: any, res: any) =
     const conversationHistory = allMessages.map((m) => ({ role: m.role as "ai" | "user", content: m.content }));
     const userAnswerCount = allMessages.filter((m) => m.role === "user").length;
 
-    const questions = await generateQuestions({
-      role: jd.role,
-      skills: jd.skills as string[],
-      experienceLevel: jd.experienceLevel,
-    });
-
-    const aiResponse = await getNextQuestion(
-      jd.role,
-      jd.skills as string[],
-      conversationHistory,
-      questions.all,
-      userAnswerCount
-    );
+    const ctx = jdContext(jd);
+    const questions = await generateQuestions(ctx);
+    const aiResponse = await getNextQuestion(ctx, conversationHistory, questions.all, userAnswerCount);
 
     const [aiMsg] = await db
       .insert(interviewMessagesTable)
-      .values({
-        interviewId,
-        role: "ai",
-        content: aiResponse.content,
-      })
+      .values({ interviewId, role: "ai", content: aiResponse.content })
       .returning();
 
     if (aiResponse.isComplete) {
@@ -379,7 +391,7 @@ router.post("/interviews/:id/complete", requireAuth, async (req: any, res: any) 
     });
 
     const conversationHistory = allMessages.map((m) => ({ role: m.role as "ai" | "user", content: m.content }));
-    const evaluation = await evaluateInterview(jd.role, jd.skills as string[], conversationHistory);
+    const evaluation = await evaluateInterview(jdContext(jd), conversationHistory);
 
     await db.update(interviewsTable).set({ status: "completed" }).where(eq(interviewsTable.id, interviewId));
 

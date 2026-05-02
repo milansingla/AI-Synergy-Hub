@@ -21,8 +21,10 @@ export interface UploadJDBody {
 export interface ParsedJD {
   id: number;
   role: string;
+  company: string;
   skills: string[];
   experienceLevel: string;
+  responsibilities: string[];
   rawText: string;
   createdAt: string;
 }

@@ -10,8 +10,10 @@ export const jobDescriptionsTable = pgTable("job_descriptions", {
     .references(() => usersTable.id, { onDelete: "cascade" }),
   rawText: text("raw_text").notNull(),
   role: text("role").notNull().default(""),
+  company: text("company").notNull().default(""),
   skills: jsonb("skills").$type<string[]>().notNull().default([]),
   experienceLevel: text("experience_level").notNull().default(""),
+  responsibilities: jsonb("responsibilities").$type<string[]>().notNull().default([]),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

@@ -42,16 +42,20 @@ router.post("/jd/upload", requireAuth, async (req: any, res: any) => {
         userId,
         rawText: jdText,
         role: parsedData.role,
+        company: parsedData.company ?? "",
         skills: parsedData.skills,
         experienceLevel: parsedData.experienceLevel,
+        responsibilities: parsedData.responsibilities ?? [],
       })
       .returning();
 
     res.status(201).json({
       id: jd.id,
       role: jd.role,
+      company: jd.company,
       skills: jd.skills,
       experienceLevel: jd.experienceLevel,
+      responsibilities: jd.responsibilities,
       rawText: jd.rawText,
       createdAt: jd.createdAt,
     });
