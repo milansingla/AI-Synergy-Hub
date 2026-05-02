@@ -1,9 +1,21 @@
+const USE_PROXY = !import.meta.env.VITE_OPENAI_API_KEY;
+
 async function getOpenAI() {
   const { default: OpenAI } = await import("openai");
   return new OpenAI({
     apiKey: import.meta.env.VITE_OPENAI_API_KEY as string,
     dangerouslyAllowBrowser: true,
   });
+}
+
+async function callProxy<T>(type: string, payload: unknown): Promise<T> {
+  const res = await fetch("/api/ai/call", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ type, payload }),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json() as Promise<T>;
 }
 
 export interface ParsedJD {
@@ -56,6 +68,7 @@ export interface JDContext {
 }
 
 export async function parseJD(jdText: string): Promise<ParsedJD> {
+  if (USE_PROXY) return callProxy<ParsedJD>("parseJD", { jdText });
   const openai = await getOpenAI();
   const response = await openai.chat.completions.create({
     model: "gpt-4o",
@@ -91,6 +104,7 @@ Return only valid JSON, no markdown, no code blocks.`,
 }
 
 export async function generateQuestions(jd: JDContext): Promise<QuestionSet> {
+  if (USE_PROXY) return callProxy<QuestionSet>("generateQuestions", { jd });
   const openai = await getOpenAI();
   const companyCtx = jd.company || "this company";
 
@@ -180,6 +194,7 @@ export async function getNextQuestion(
   conversationHistory: Array<{ role: "ai" | "user"; content: string }>,
   answeredCount: number
 ): Promise<{ content: string; isComplete: boolean; phase: string }> {
+  if (USE_PROXY) return callProxy<{ content: string; isComplete: boolean; phase: string }>("getNextQuestion", { jd, questionSet, conversationHistory, answeredCount });
   const { all: questionPool } = questionSet;
 
   if (answeredCount >= questionPool.length) {
@@ -266,6 +281,7 @@ export async function evaluateInterview(
   jd: JDContext,
   conversationHistory: Array<{ role: "ai" | "user"; content: string }>
 ): Promise<FullEvaluation> {
+  if (USE_PROXY) return callProxy<FullEvaluation>("evaluateInterview", { jd, conversationHistory });
   const openai = await getOpenAI();
   const qaText = conversationHistory
     .reduce((acc: Array<{ q: string; a: string }>, msg, i) => {
