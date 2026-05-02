@@ -1,4 +1,6 @@
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
+import { useEffect } from "react";
+import { useAuth } from "@clerk/react";
 import { Zap, Brain, BarChart3, FileText, ArrowRight, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -29,6 +31,15 @@ const benefits = [
 ];
 
 export default function Landing() {
+  const { isSignedIn, isLoaded } = useAuth();
+  const [, navigate] = useLocation();
+
+  useEffect(() => {
+    if (isLoaded && isSignedIn) {
+      navigate("/dashboard");
+    }
+  }, [isLoaded, isSignedIn, navigate]);
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Nav */}
