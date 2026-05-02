@@ -5,6 +5,7 @@
  * Synorlab Interviewer API
  * OpenAPI spec version: 0.1.0
  */
+import type { CriteriaScore } from "./criteriaScore";
 import type { QuestionEvaluation } from "./questionEvaluation";
 
 export interface Evaluation {
@@ -14,6 +15,7 @@ export interface Evaluation {
   feedback: string;
   strengths: string[];
   improvements: string[];
+  criteriaScores: CriteriaScore[];
   questionEvals: QuestionEvaluation[];
   createdAt: Date;
 }

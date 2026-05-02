@@ -11,6 +11,13 @@ export interface QuestionEval {
   idealAnswer: string;
 }
 
+export interface CriteriaScore {
+  dimension: string;
+  score: number;
+  weight: number;
+  feedback: string;
+}
+
 export const evaluationsTable = pgTable("evaluations", {
   id: serial("id").primaryKey(),
   interviewId: integer("interview_id")
@@ -21,6 +28,7 @@ export const evaluationsTable = pgTable("evaluations", {
   feedback: text("feedback").notNull(),
   strengths: jsonb("strengths").$type<string[]>().notNull().default([]),
   improvements: jsonb("improvements").$type<string[]>().notNull().default([]),
+  criteriaScores: jsonb("criteria_scores").$type<CriteriaScore[]>().default([]),
   questionEvals: jsonb("question_evals").$type<QuestionEval[]>().notNull().default([]),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });

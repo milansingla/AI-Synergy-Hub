@@ -15,6 +15,7 @@ export * from "./adminUser";
 export * from "./aIMessage";
 export * from "./apiError";
 export * from "./createInterviewBody";
+export * from "./criteriaScore";
 export * from "./evaluation";
 export * from "./healthStatus";
 export * from "./interview";

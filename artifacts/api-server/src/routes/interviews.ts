@@ -4,6 +4,7 @@ import { db, usersTable, interviewsTable, interviewMessagesTable, jobDescription
 import { eq, and, count, desc } from "drizzle-orm";
 import { CreateInterviewBody, RespondToInterviewBody, GetInterviewParams, RespondToInterviewParams, CompleteInterviewParams } from "@workspace/api-zod";
 import { generateQuestions, getNextQuestion, evaluateInterview } from "../lib/aiPrompts";
+import type { JDContext } from "../lib/aiPrompts";
 
 const router = Router();
 
@@ -23,15 +24,14 @@ const ensureUser = async (userId: string, auth: any) => {
   }
 };
 
-/** Build the full JD context object passed to every AI function */
-function jdContext(jd: {
+function toJDContext(jd: {
   role: string;
   company: string;
   skills: unknown;
   experienceLevel: string;
   responsibilities: unknown;
   rawText: string;
-}) {
+}): JDContext {
   return {
     role: jd.role,
     company: jd.company ?? "",
@@ -39,6 +39,30 @@ function jdContext(jd: {
     experienceLevel: jd.experienceLevel,
     responsibilities: (jd.responsibilities as string[]) ?? [],
     rawText: jd.rawText,
+  };
+}
+
+function evalRow(e: {
+  id: number;
+  interviewId: number;
+  overallScore: number;
+  feedback: string;
+  strengths: string[] | unknown;
+  improvements: string[] | unknown;
+  criteriaScores: unknown;
+  questionEvals: unknown;
+  createdAt: Date;
+}) {
+  return {
+    id: e.id,
+    interviewId: e.interviewId,
+    overallScore: e.overallScore,
+    feedback: e.feedback,
+    strengths: e.strengths,
+    improvements: e.improvements,
+    criteriaScores: e.criteriaScores ?? [],
+    questionEvals: e.questionEvals,
+    createdAt: e.createdAt,
   };
 }
 
@@ -111,9 +135,9 @@ router.post("/interviews", requireAuth, async (req: any, res: any) => {
       .values({ userId, jdId: parsed.data.jdId, status: "in_progress" })
       .returning();
 
-    const ctx = jdContext(jd);
-    const questions = await generateQuestions(ctx);
-    const firstQuestion = await getNextQuestion(ctx, [], questions.all, 0);
+    const ctx = toJDContext(jd);
+    const questionSet = await generateQuestions(ctx);
+    const firstQuestion = await getNextQuestion(ctx, questionSet, [], 0);
 
     await db.insert(interviewMessagesTable).values({
       interviewId: interview.id,
@@ -153,8 +177,6 @@ router.get("/interviews/stats", requireAuth, async (req: any, res: any) => {
       .where(eq(interviewsTable.userId, userId))
       .orderBy(desc(interviewsTable.createdAt));
 
-    const completed = allInterviews.filter((i) => i.status === "completed");
-
     let totalScore = 0;
     let scoredCount = 0;
     const recentWithScores = await Promise.all(
@@ -188,7 +210,7 @@ router.get("/interviews/stats", requireAuth, async (req: any, res: any) => {
 
     res.json({
       totalInterviews: allInterviews.length,
-      completedInterviews: completed.length,
+      completedInterviews: allInterviews.filter((i) => i.status === "completed").length,
       averageScore: scoredCount > 0 ? totalScore / scoredCount : 0,
       recentInterviews: recentWithScores,
     });
@@ -247,18 +269,7 @@ router.get("/interviews/:id", requireAuth, async (req: any, res: any) => {
         content: m.content,
         createdAt: m.createdAt,
       })),
-      evaluation: evaluation
-        ? {
-            id: evaluation.id,
-            interviewId: evaluation.interviewId,
-            overallScore: evaluation.overallScore,
-            feedback: evaluation.feedback,
-            strengths: evaluation.strengths,
-            improvements: evaluation.improvements,
-            questionEvals: evaluation.questionEvals,
-            createdAt: evaluation.createdAt,
-          }
-        : null,
+      evaluation: evaluation ? evalRow(evaluation) : null,
       createdAt: interview.createdAt,
     });
   } catch (err) {
@@ -280,33 +291,18 @@ router.post("/interviews/:id/respond", requireAuth, async (req: any, res: any) =
     const interviewId = paramsParsed.data.id;
 
     const interview = await db
-      .select({
-        id: interviewsTable.id,
-        jdId: interviewsTable.jdId,
-        status: interviewsTable.status,
-        userId: interviewsTable.userId,
-      })
+      .select({ id: interviewsTable.id, jdId: interviewsTable.jdId, status: interviewsTable.status, userId: interviewsTable.userId })
       .from(interviewsTable)
       .where(eq(interviewsTable.id, interviewId))
       .then((rows) => rows[0]);
 
-    if (!interview || interview.userId !== userId) {
-      return res.status(404).json({ error: "Interview not found" });
-    }
-    if (interview.status === "completed") {
-      return res.status(400).json({ error: "Interview is already completed" });
-    }
+    if (!interview || interview.userId !== userId) return res.status(404).json({ error: "Interview not found" });
+    if (interview.status === "completed") return res.status(400).json({ error: "Interview is already completed" });
 
-    const jd = await db.query.jobDescriptionsTable.findFirst({
-      where: eq(jobDescriptionsTable.id, interview.jdId),
-    });
+    const jd = await db.query.jobDescriptionsTable.findFirst({ where: eq(jobDescriptionsTable.id, interview.jdId) });
     if (!jd) return res.status(404).json({ error: "Job description not found" });
 
-    await db.insert(interviewMessagesTable).values({
-      interviewId,
-      role: "user",
-      content: bodyParsed.data.content,
-    });
+    await db.insert(interviewMessagesTable).values({ interviewId, role: "user", content: bodyParsed.data.content });
 
     const allMessages = await db.query.interviewMessagesTable.findMany({
       where: eq(interviewMessagesTable.interviewId, interviewId),
@@ -316,9 +312,9 @@ router.post("/interviews/:id/respond", requireAuth, async (req: any, res: any) =
     const conversationHistory = allMessages.map((m) => ({ role: m.role as "ai" | "user", content: m.content }));
     const userAnswerCount = allMessages.filter((m) => m.role === "user").length;
 
-    const ctx = jdContext(jd);
-    const questions = await generateQuestions(ctx);
-    const aiResponse = await getNextQuestion(ctx, conversationHistory, questions.all, userAnswerCount);
+    const ctx = toJDContext(jd);
+    const questionSet = await generateQuestions(ctx);
+    const aiResponse = await getNextQuestion(ctx, questionSet, conversationHistory, userAnswerCount);
 
     const [aiMsg] = await db
       .insert(interviewMessagesTable)
@@ -329,11 +325,7 @@ router.post("/interviews/:id/respond", requireAuth, async (req: any, res: any) =
       await db.update(interviewsTable).set({ status: "completed" }).where(eq(interviewsTable.id, interviewId));
     }
 
-    res.json({
-      id: aiMsg.id,
-      content: aiMsg.content,
-      isComplete: aiResponse.isComplete,
-    });
+    res.json({ id: aiMsg.id, content: aiMsg.content, isComplete: aiResponse.isComplete });
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Failed to process response" });
@@ -350,39 +342,17 @@ router.post("/interviews/:id/complete", requireAuth, async (req: any, res: any) 
     const interviewId = paramsParsed.data.id;
 
     const interview = await db
-      .select({
-        id: interviewsTable.id,
-        jdId: interviewsTable.jdId,
-        status: interviewsTable.status,
-        userId: interviewsTable.userId,
-      })
+      .select({ id: interviewsTable.id, jdId: interviewsTable.jdId, status: interviewsTable.status, userId: interviewsTable.userId })
       .from(interviewsTable)
       .where(eq(interviewsTable.id, interviewId))
       .then((rows) => rows[0]);
 
-    if (!interview || interview.userId !== userId) {
-      return res.status(404).json({ error: "Interview not found" });
-    }
+    if (!interview || interview.userId !== userId) return res.status(404).json({ error: "Interview not found" });
 
-    const existingEval = await db.query.evaluationsTable.findFirst({
-      where: eq(evaluationsTable.interviewId, interviewId),
-    });
-    if (existingEval) {
-      return res.json({
-        id: existingEval.id,
-        interviewId: existingEval.interviewId,
-        overallScore: existingEval.overallScore,
-        feedback: existingEval.feedback,
-        strengths: existingEval.strengths,
-        improvements: existingEval.improvements,
-        questionEvals: existingEval.questionEvals,
-        createdAt: existingEval.createdAt,
-      });
-    }
+    const existingEval = await db.query.evaluationsTable.findFirst({ where: eq(evaluationsTable.interviewId, interviewId) });
+    if (existingEval) return res.json(evalRow(existingEval));
 
-    const jd = await db.query.jobDescriptionsTable.findFirst({
-      where: eq(jobDescriptionsTable.id, interview.jdId),
-    });
+    const jd = await db.query.jobDescriptionsTable.findFirst({ where: eq(jobDescriptionsTable.id, interview.jdId) });
     if (!jd) return res.status(404).json({ error: "Job description not found" });
 
     const allMessages = await db.query.interviewMessagesTable.findMany({
@@ -391,7 +361,7 @@ router.post("/interviews/:id/complete", requireAuth, async (req: any, res: any) 
     });
 
     const conversationHistory = allMessages.map((m) => ({ role: m.role as "ai" | "user", content: m.content }));
-    const evaluation = await evaluateInterview(jdContext(jd), conversationHistory);
+    const evaluation = await evaluateInterview(toJDContext(jd), conversationHistory);
 
     await db.update(interviewsTable).set({ status: "completed" }).where(eq(interviewsTable.id, interviewId));
 
@@ -403,20 +373,12 @@ router.post("/interviews/:id/complete", requireAuth, async (req: any, res: any) 
         feedback: evaluation.feedback,
         strengths: evaluation.strengths,
         improvements: evaluation.improvements,
+        criteriaScores: evaluation.criteriaScores,
         questionEvals: evaluation.questionEvals,
       })
       .returning();
 
-    res.json({
-      id: savedEval.id,
-      interviewId: savedEval.interviewId,
-      overallScore: savedEval.overallScore,
-      feedback: savedEval.feedback,
-      strengths: savedEval.strengths,
-      improvements: savedEval.improvements,
-      questionEvals: savedEval.questionEvals,
-      createdAt: savedEval.createdAt,
-    });
+    res.json(evalRow(savedEval));
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Failed to complete interview" });

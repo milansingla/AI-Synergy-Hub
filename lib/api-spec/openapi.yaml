@@ -492,6 +492,8 @@ components:
           type: integer
         role:
           type: string
+        company:
+          type: string
         status:
           type: string
           enum: [in_progress, completed]
@@ -509,6 +511,7 @@ components:
         - id
         - jdId
         - role
+        - company
         - status
         - messages
         - createdAt
@@ -554,6 +557,10 @@ components:
           type: array
           items:
             type: string
+        criteriaScores:
+          type: array
+          items:
+            $ref: "#/components/schemas/CriteriaScore"
         questionEvals:
           type: array
           items:
@@ -568,8 +575,26 @@ components:
         - feedback
         - strengths
         - improvements
+        - criteriaScores
         - questionEvals
         - createdAt
+
+    CriteriaScore:
+      type: object
+      properties:
+        dimension:
+          type: string
+        score:
+          type: number
+        weight:
+          type: number
+        feedback:
+          type: string
+      required:
+        - dimension
+        - score
+        - weight
+        - feedback
 
     QuestionEvaluation:
       type: object

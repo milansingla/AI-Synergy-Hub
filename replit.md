@@ -35,13 +35,13 @@ A full-stack AI-powered B2B SaaS platform for universities where students upload
 
 ## Database
 
-PostgreSQL via `DATABASE_URL`. Schema defined in `lib/db/src/schema.ts`:
+PostgreSQL via `DATABASE_URL`. Schema defined in `lib/db/src/schema/`:
 
 - `users` — Clerk user IDs, email, role (student/admin)
-- `job_descriptions` — raw JD text + AI-parsed fields (role, skills, experienceLevel)
+- `job_descriptions` — rawText, role, company, skills (jsonb), experienceLevel, responsibilities (jsonb)
 - `interviews` — links user + JD, tracks status (in_progress/completed)
 - `interview_messages` — per-message log (role: ai/user)
-- `evaluations` — AI-scored evaluation per interview (overallScore, feedback, strengths, improvements, questionEvals)
+- `evaluations` — AI-scored evaluation: overallScore, feedback, strengths, improvements, criteriaScores (6-dim jsonb), questionEvals (jsonb)
 
 ## API Routes
 
@@ -66,14 +66,31 @@ All under `/api`:
 | GET | `/admin/all-interviews` | All interviews platform-wide (admin only) |
 | DELETE | `/admin/interviews/:id` | Delete interview (admin only) |
 
-## AI Prompts
+## AI Interview System
 
 Defined in `artifacts/api-server/src/lib/aiPrompts.ts`:
 
-- `parseJD(text)` — Extract role, skills, experienceLevel from raw JD
-- `generateQuestions(jd)` — Generate technical + behavioral questions for role
-- `getNextQuestion(...)` — Get next question in conversation flow (returns `isComplete` when done)
-- `evaluateInterview(...)` — Score all answers with detailed feedback per question
+### Question Generation — Structured Phases
+`generateQuestions(jd: JDContext)` returns a `QuestionSet` with distinct phases:
+1. **Opener** (1 question): Warm greeting, name company + role, ask for self-introduction
+2. **Technical** (4 questions): Each references a specific tool/technology/responsibility from the JD
+3. **Behavioral** (3 questions): STAR-format anchored to key JD responsibilities
+4. **Situational** (2 questions): Realistic scenarios specific to this role at this company
+5. **Closer** (1 question): Wrap-up, invites candidate questions about the company
+
+### Interviewer Persona
+`getNextQuestion(jd, questionSet, history, answeredCount)` — AI interviewer persona "Priya Sharma, Senior HR Manager". Displays phase label and progress in UI. Tracks phases, acknowledges previous answers naturally, reminds of STAR method in Behavioral phase.
+
+### Evaluation — 6-Dimension Framework
+`evaluateInterview(jd, history)` — Aligned with FAANG + Indian corporate HR standards:
+1. **Technical & Domain Knowledge** (25%)
+2. **Communication & Articulation** (20%)
+3. **Problem-Solving & Analytical Thinking** (20%)
+4. **Behavioural Competencies** (15%)
+5. **Cultural Fit & Professional Attitude** (10%)
+6. **Role & Company Alignment** (10%)
+
+Scoring: 90-100 Exceptional → 75-89 Strong → 60-74 Adequate → 40-59 Developing → 0-39 Insufficient
 
 ## Frontend Pages
 
@@ -83,19 +100,32 @@ Defined in `artifacts/api-server/src/lib/aiPrompts.ts`:
 | `/sign-in` | Clerk sign-in | Public |
 | `/sign-up` | Clerk sign-up | Public |
 | `/dashboard` | Stats + recent interviews | Protected |
-| `/jd/new` | Upload + parse JD, start interview | Protected |
+| `/jd/new` | Upload + parse JD (shows company, responsibilities, skills), start interview | Protected |
 | `/interviews` | List all interviews | Protected |
-| `/interviews/:id` | Live chat interview session | Protected |
-| `/interviews/:id/results` | Evaluation results + score | Protected |
-| `/admin` | Admin panel — 3 tabs: Overview, Users, Interviews | Protected (admin role required, `AdminRoute`) |
+| `/interviews/:id` | Live voice interview — phase indicator, End Interview button, Home button | Protected |
+| `/interviews/:id/results` | Evaluation: 6-dim criteria bars, Q&A breakdown, ideal answers, Home button | Protected |
+| `/admin` | Admin panel — 3 tabs: Overview, Users, Interviews | Protected (admin only) |
 | `/settings` | Account settings | Protected |
+
+## Interview Session UI Features
+- Phase progress bar (Opening → Technical → Behavioural → Situational → Closing)
+- Color-coded phase badge (cyan/violet/amber/emerald/rose)
+- **End Interview** button — shows confirmation modal, then generates evaluation + navigates to results
+- **Home** button — always visible in header and intro screen
+- Transcript sidebar with interviewer/candidate labels
+- Fullscreen enforcement (3-strike system)
 
 ## Codegen
 
-To regenerate API hooks after changing the OpenAPI spec:
-
+After changing `lib/api-spec/openapi.yaml`, run:
 ```bash
 pnpm --filter @workspace/api-spec exec orval --config ./orval.config.ts
+```
+Then fix `lib/api-zod/src/index.ts` — remove the `export * from "./generated/types"` line (codegen re-adds it each time, causing duplicate export errors). Keep only `export * from "./generated/api"`.
+
+Then rebuild libs:
+```bash
+pnpm run typecheck:libs
 ```
 
 Generated files:
@@ -116,3 +146,4 @@ Generated files:
 - The Clerk proxy (`/api/__clerk`) only runs in **production**. In dev, Clerk loads from CDN directly. The `proxyUrl` in `ClerkProvider` is conditionally set only when `import.meta.env.PROD === true`.
 - The `@clerk/react` v6 API does **not** export `SignedIn`/`SignedOut` components. Route protection is done via a `ProtectedRoute` component using `useAuth().isSignedIn`.
 - Theme: dark navy (`--background: 216 42% 8%`) with electric cyan accent (`--primary: 189 100% 50%`). Font: Plus Jakarta Sans + Spline Sans Mono.
+- After codegen, always fix `lib/api-zod/src/index.ts` to remove the `types` re-export (it causes TS2308 duplicate export errors).

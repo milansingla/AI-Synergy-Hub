@@ -91,6 +91,13 @@ export const InterviewDetailStatus = {
   completed: "completed",
 } as const;
 
+export interface CriteriaScore {
+  dimension: string;
+  score: number;
+  weight: number;
+  feedback: string;
+}
+
 export interface QuestionEvaluation {
   question: string;
   answer: string;
@@ -106,6 +113,7 @@ export interface Evaluation {
   feedback: string;
   strengths: string[];
   improvements: string[];
+  criteriaScores: CriteriaScore[];
   questionEvals: QuestionEvaluation[];
   createdAt: string;
 }
@@ -114,6 +122,7 @@ export interface InterviewDetail {
   id: number;
   jdId: number;
   role: string;
+  company: string;
   status: InterviewDetailStatus;
   messages: InterviewMessage[];
   evaluation?: Evaluation | null;

@@ -13,6 +13,7 @@ export interface InterviewDetail {
   id: number;
   jdId: number;
   role: string;
+  company: string;
   status: InterviewDetailStatus;
   messages: InterviewMessage[];
   evaluation?: Evaluation | null;

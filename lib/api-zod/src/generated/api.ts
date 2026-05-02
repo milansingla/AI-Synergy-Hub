@@ -54,6 +54,7 @@ export const GetInterviewResponse = zod.object({
   id: zod.number(),
   jdId: zod.number(),
   role: zod.string(),
+  company: zod.string(),
   status: zod.enum(["in_progress", "completed"]),
   messages: zod.array(
     zod.object({
@@ -71,6 +72,14 @@ export const GetInterviewResponse = zod.object({
       feedback: zod.string(),
       strengths: zod.array(zod.string()),
       improvements: zod.array(zod.string()),
+      criteriaScores: zod.array(
+        zod.object({
+          dimension: zod.string(),
+          score: zod.number(),
+          weight: zod.number(),
+          feedback: zod.string(),
+        }),
+      ),
       questionEvals: zod.array(
         zod.object({
           question: zod.string(),
@@ -117,6 +126,14 @@ export const CompleteInterviewResponse = zod.object({
   feedback: zod.string(),
   strengths: zod.array(zod.string()),
   improvements: zod.array(zod.string()),
+  criteriaScores: zod.array(
+    zod.object({
+      dimension: zod.string(),
+      score: zod.number(),
+      weight: zod.number(),
+      feedback: zod.string(),
+    }),
+  ),
   questionEvals: zod.array(
     zod.object({
       question: zod.string(),
