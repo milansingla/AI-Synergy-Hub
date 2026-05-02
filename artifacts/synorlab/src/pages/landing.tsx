@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@clerk/react";
 import { useLocation } from "wouter";
 import { ArrowRight } from "lucide-react";
+import { MarketingNav, MarketingFooter, MarketingStyles } from "@/components/marketing-layout";
 
 const MARQUEE = [
   "AI-POWERED MOCK INTERVIEWS",
@@ -22,15 +23,6 @@ const QUESTIONS = [
   "Describe a situation where you disagreed with your manager.",
   "What makes you the right candidate for this role?",
 ];
-
-const SynorLogo = ({ size = 28 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 28 28" fill="none">
-    <rect width="28" height="28" fill="#2639A6" />
-    <rect x="6" y="8" width="4" height="13" fill="#ED6C00" />
-    <rect x="12" y="5" width="4" height="16" fill="white" />
-    <rect x="18" y="10" width="4" height="11" fill="white" opacity="0.6" />
-  </svg>
-);
 
 function HeroAnimation() {
   const [qIdx, setQIdx] = useState(0);
@@ -353,98 +345,8 @@ export default function Landing() {
       style={{ fontFamily: "'Alexandria','Helvetica Neue',Arial,sans-serif" }}
       className="min-h-screen bg-white text-[#0D0D0D] overflow-x-hidden"
     >
-      {/* ── Fonts & animations ─────────────────────────────────────── */}
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Alexandria:wght@300;400;600;700;800;900&display=swap');
-
-        @keyframes lp-marquee { from{transform:translateX(0)} to{transform:translateX(-50%)} }
-        .lp-marquee { animation: lp-marquee 28s linear infinite; display:flex; width:max-content; }
-        .lp-marquee:hover { animation-play-state:paused; }
-
-        @keyframes lp-float {
-          0%,100%{ transform:translateY(0px); }
-          50%{ transform:translateY(-12px); }
-        }
-        .lp-float { animation: lp-float 4.5s ease-in-out infinite; }
-
-        @keyframes lp-float-r {
-          0%,100%{ transform:translateY(0px); }
-          50%{ transform:translateY(10px); }
-        }
-        .lp-float-r { animation: lp-float-r 5s ease-in-out infinite; }
-
-        @keyframes lp-rot {
-          from{ transform:rotate(0deg); }
-          to{ transform:rotate(360deg); }
-        }
-        .lp-rot-slow { animation: lp-rot 18s linear infinite; transform-origin:center; }
-        .lp-rot-slow-r { animation: lp-rot 22s linear infinite reverse; transform-origin:center; }
-
-        @keyframes lp-dot-bounce {
-          0%,80%,100%{ transform:scale(0.7); opacity:0.4; }
-          40%{ transform:scale(1); opacity:1; }
-        }
-        .lp-dot {
-          display:inline-block;
-          width:7px; height:7px;
-          border-radius:50%;
-          background:#ED6C00;
-          animation: lp-dot-bounce 1.2s ease-in-out infinite;
-        }
-
-        @keyframes lp-blink { 0%,100%{opacity:1} 50%{opacity:0} }
-        .lp-cursor {
-          display:inline-block;
-          width:2px; height:12px;
-          background:#ED6C00;
-          margin-left:4px;
-          vertical-align:middle;
-          animation: lp-blink 1s step-end infinite;
-        }
-
-        @keyframes lp-fade-up {
-          from{ opacity:0; transform:translateY(8px); }
-          to{ opacity:1; transform:translateY(0); }
-        }
-        .lp-fade-up { animation: lp-fade-up 0.4s ease forwards; }
-
-        .lp-photo { overflow:hidden; position:relative; }
-        .lp-photo img { width:100%; height:100%; object-fit:cover; display:block; transition:transform 0.65s ease; }
-        .lp-photo:hover img { transform:scale(1.05); }
-        .lp-ol { position:absolute; inset:0; pointer-events:none; }
-        .lp-geo-sq { position:absolute; }
-      `}</style>
-
-      {/* ── NAV ──────────────────────────────────────────────────────── */}
-      <nav className="bg-white sticky top-0 z-50" style={{ borderBottom: "1px solid #EBEBEB" }}>
-        <div className="max-w-screen-xl mx-auto flex items-center justify-between px-8" style={{ height: "64px" }}>
-          <div className="flex items-center gap-2">
-            <SynorLogo size={26} />
-            <span style={{ color: "#2639A6", fontWeight: 800, fontSize: "0.95rem", letterSpacing: "0.06em" }}>
-              SYNORLAB
-            </span>
-          </div>
-
-          <div className="hidden md:flex items-center gap-8">
-            {[["#features", "FEATURES"], ["#how", "HOW IT WORKS"]].map(([href, label]) => (
-              <a key={href} href={href} style={{ color: "#555", fontSize: "0.75rem", fontWeight: 700, textDecoration: "none", letterSpacing: "0.1em" }}>
-                {label}
-              </a>
-            ))}
-            <Link href="/sign-in">
-              <span style={{ color: "#2639A6", fontSize: "0.75rem", fontWeight: 700, letterSpacing: "0.1em", cursor: "pointer" }}>
-                SIGN IN
-              </span>
-            </Link>
-          </div>
-
-          <Link href="/sign-up">
-            <button style={{ background: "#ED6C00", color: "white", fontWeight: 800, fontSize: "0.72rem", letterSpacing: "0.12em", padding: "0.6rem 1.4rem", border: "none", borderRadius: 0, cursor: "pointer" }}>
-              BOOK DEMO ↗
-            </button>
-          </Link>
-        </div>
-      </nav>
+      <MarketingStyles />
+      <MarketingNav />
 
       {/* ── HERO ─────────────────────────────────────────────────────── */}
       <section className="bg-white" style={{ minHeight: "calc(100vh - 64px)", display: "flex" }}>
@@ -706,22 +608,7 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ── FOOTER ───────────────────────────────────────────────────── */}
-      <footer style={{ background: "white", borderTop: "1px solid #EBEBEB" }}>
-        <div className="max-w-screen-xl mx-auto px-8 py-8 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <SynorLogo size={20} />
-            <span style={{ color: "#2639A6", fontWeight: 800, fontSize: "0.8rem", letterSpacing: "0.08em" }}>SYNORLAB</span>
-          </div>
-          <p style={{ color: "#aaa", fontSize: "0.72rem", fontWeight: 500 }}>
-            AI interview training for university placement departments — © 2025 Synorlab
-          </p>
-          <div style={{ display: "flex", gap: "24px" }}>
-            <Link href="/sign-in"><span style={{ color: "#666", fontSize: "0.72rem", fontWeight: 700, cursor: "pointer", letterSpacing: "0.06em" }}>SIGN IN</span></Link>
-            <Link href="/sign-up"><span style={{ color: "#ED6C00", fontSize: "0.72rem", fontWeight: 700, cursor: "pointer", letterSpacing: "0.06em" }}>GET STARTED</span></Link>
-          </div>
-        </div>
-      </footer>
+      <MarketingFooter />
     </div>
   );
 }

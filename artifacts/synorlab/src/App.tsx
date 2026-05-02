@@ -8,6 +8,9 @@ import { useGetUserProfile } from "@/hooks/api";
 import Landing from "@/pages/landing";
 
 const NotFound = lazy(() => import("@/pages/not-found"));
+const Features = lazy(() => import("@/pages/features"));
+const Pricing = lazy(() => import("@/pages/pricing"));
+const Contact = lazy(() => import("@/pages/contact"));
 const Dashboard = lazy(() => import("@/pages/dashboard"));
 const JDNew = lazy(() => import("@/pages/jd-new"));
 const InterviewsList = lazy(() => import("@/pages/interviews"));
@@ -104,6 +107,9 @@ function AppRoutes() {
     <Suspense fallback={<Spinner />}>
       <Switch>
         <Route path="/" component={Landing} />
+        <Route path="/features"><Features /></Route>
+        <Route path="/pricing"><Pricing /></Route>
+        <Route path="/contact"><Contact /></Route>
 
         <Route path="/sign-in">
           <div className="min-h-screen flex items-center justify-center bg-background p-4">
