@@ -16,6 +16,8 @@ tags:
     description: Job description processing
   - name: admin
     description: Admin operations
+  - name: facility
+    description: Facility panel operations
   - name: users
     description: User profile operations
 paths:
@@ -220,6 +222,31 @@ paths:
               schema:
                 $ref: "#/components/schemas/UserProfile"
 
+  /users/redeem-code:
+    post:
+      operationId: redeemAccessCode
+      tags: [users]
+      summary: Redeem an access code to change role
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RedeemCodeBody"
+      responses:
+        "200":
+          description: Role updated via access code
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "400":
+          description: Invalid or expired code
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
   /admin/users:
     get:
       operationId: listAllUsers
@@ -343,6 +370,148 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiError"
+
+  /admin/invites:
+    get:
+      operationId: listInvites
+      tags: [admin]
+      summary: List all email invites (admin only)
+      responses:
+        "200":
+          description: List of invites
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Invite"
+    post:
+      operationId: createInvite
+      tags: [admin]
+      summary: Create an email invite (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateInviteBody"
+      responses:
+        "201":
+          description: Invite created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invite"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /admin/invites/{id}:
+    delete:
+      operationId: deleteInvite
+      tags: [admin]
+      summary: Delete an invite (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Invite deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /admin/access-codes:
+    get:
+      operationId: listAccessCodes
+      tags: [admin]
+      summary: List all access codes (admin only)
+      responses:
+        "200":
+          description: List of access codes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AccessCode"
+    post:
+      operationId: createAccessCode
+      tags: [admin]
+      summary: Create an access code (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAccessCodeBody"
+      responses:
+        "201":
+          description: Access code created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccessCode"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /admin/access-codes/{id}:
+    delete:
+      operationId: deleteAccessCode
+      tags: [admin]
+      summary: Delete an access code (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Access code deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /facility/students:
+    get:
+      operationId: listFacilityStudents
+      tags: [facility]
+      summary: List all students with interview stats (facility only)
+      responses:
+        "200":
+          description: List of students with stats
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FacilityStudent"
+
+  /facility/stats:
+    get:
+      operationId: getFacilityStats
+      tags: [facility]
+      summary: Get aggregate student stats (facility only)
+      responses:
+        "200":
+          description: Aggregate stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FacilityStats"
 
 components:
   schemas:
@@ -644,7 +813,7 @@ components:
           type: string
         role:
           type: string
-          enum: [student, admin]
+          enum: [student, admin, facility]
         createdAt:
           type: string
           format: date-time
@@ -659,7 +828,7 @@ components:
       properties:
         role:
           type: string
-          enum: [student, admin]
+          enum: [student, admin, facility]
       required:
         - role
 
@@ -706,7 +875,7 @@ components:
       properties:
         role:
           type: string
-          enum: [student, admin]
+          enum: [student, admin, facility]
       required:
         - role
 
@@ -740,3 +909,134 @@ components:
         - status
         - messageCount
         - createdAt
+
+    Invite:
+      type: object
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+        role:
+          type: string
+          enum: [student, admin, facility]
+        token:
+          type: string
+        used:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - email
+        - role
+        - token
+        - used
+        - createdAt
+
+    CreateInviteBody:
+      type: object
+      properties:
+        email:
+          type: string
+        role:
+          type: string
+          enum: [student, admin, facility]
+      required:
+        - email
+        - role
+
+    AccessCode:
+      type: object
+      properties:
+        id:
+          type: integer
+        code:
+          type: string
+        role:
+          type: string
+          enum: [student, admin, facility]
+        active:
+          type: boolean
+        maxUses:
+          type: integer
+        usedCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - code
+        - role
+        - active
+        - maxUses
+        - usedCount
+        - createdAt
+
+    CreateAccessCodeBody:
+      type: object
+      properties:
+        role:
+          type: string
+          enum: [student, admin, facility]
+        code:
+          type: string
+        maxUses:
+          type: integer
+      required:
+        - role
+
+    RedeemCodeBody:
+      type: object
+      properties:
+        code:
+          type: string
+      required:
+        - code
+
+    FacilityStudent:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        totalInterviews:
+          type: integer
+        completedInterviews:
+          type: integer
+        averageScore:
+          type: number
+          nullable: true
+        lastActive:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - email
+        - totalInterviews
+        - completedInterviews
+        - createdAt
+
+    FacilityStats:
+      type: object
+      properties:
+        totalStudents:
+          type: integer
+        activeThisWeek:
+          type: integer
+        averageScore:
+          type: number
+        completionRate:
+          type: number
+      required:
+        - totalStudents
+        - activeThisWeek
+        - averageScore
+        - completionRate

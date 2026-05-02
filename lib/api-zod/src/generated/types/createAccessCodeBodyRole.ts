@@ -6,10 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type AdminUpdateUserRoleBodyRole =
-  (typeof AdminUpdateUserRoleBodyRole)[keyof typeof AdminUpdateUserRoleBodyRole];
+export type CreateAccessCodeBodyRole =
+  (typeof CreateAccessCodeBodyRole)[keyof typeof CreateAccessCodeBodyRole];
 
-export const AdminUpdateUserRoleBodyRole = {
+export const CreateAccessCodeBodyRole = {
   student: "student",
   admin: "admin",
   facility: "facility",

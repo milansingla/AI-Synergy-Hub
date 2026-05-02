@@ -1,7 +1,8 @@
 import { Router } from "express";
 import { getAuth } from "@clerk/express";
-import { db, usersTable, interviewsTable, evaluationsTable, interviewMessagesTable, jobDescriptionsTable } from "@workspace/db";
+import { db, usersTable, interviewsTable, evaluationsTable, interviewMessagesTable, jobDescriptionsTable, invitesTable, accessCodesTable } from "@workspace/db";
 import { eq, count, avg, desc } from "drizzle-orm";
+import { randomBytes } from "crypto";
 
 const router = Router();
 
@@ -69,8 +70,8 @@ router.put("/admin/users/:userId/role", requireAdmin, async (req: any, res: any)
   try {
     const { userId } = req.params;
     const { role } = req.body;
-    if (!role || !["student", "admin"].includes(role)) {
-      return res.status(400).json({ error: "Role must be 'student' or 'admin'" });
+    if (!role || !["student", "admin", "facility"].includes(role)) {
+      return res.status(400).json({ error: "Role must be 'student', 'admin', or 'facility'" });
     }
     const [updated] = await db
       .update(usersTable)
@@ -179,6 +180,101 @@ router.delete("/admin/interviews/:id", requireAdmin, async (req: any, res: any) 
     await db.delete(interviewMessagesTable).where(eq(interviewMessagesTable.interviewId, id));
     await db.delete(interviewsTable).where(eq(interviewsTable.id, id));
     res.json({ error: "Interview deleted successfully" });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ── Invites ────────────────────────────────────────────────────────────────
+
+// GET /api/admin/invites
+router.get("/admin/invites", requireAdmin, async (req: any, res: any) => {
+  try {
+    const invites = await db.query.invitesTable.findMany({ orderBy: (t) => [desc(t.createdAt)] });
+    res.json(invites);
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// POST /api/admin/invites
+router.post("/admin/invites", requireAdmin, async (req: any, res: any) => {
+  try {
+    const { email, role } = req.body;
+    if (!email || !role || !["student", "admin", "facility"].includes(role)) {
+      return res.status(400).json({ error: "Valid email and role required" });
+    }
+    const token = randomBytes(16).toString("hex");
+    const [invite] = await db
+      .insert(invitesTable)
+      .values({ email: email.toLowerCase().trim(), role, token })
+      .returning();
+    res.status(201).json(invite);
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// DELETE /api/admin/invites/:id
+router.delete("/admin/invites/:id", requireAdmin, async (req: any, res: any) => {
+  try {
+    const id = Number(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+    await db.delete(invitesTable).where(eq(invitesTable.id, id));
+    res.json({ error: "Invite deleted" });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ── Access Codes ───────────────────────────────────────────────────────────
+
+// GET /api/admin/access-codes
+router.get("/admin/access-codes", requireAdmin, async (req: any, res: any) => {
+  try {
+    const codes = await db.query.accessCodesTable.findMany({ orderBy: (t) => [desc(t.createdAt)] });
+    res.json(codes);
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// POST /api/admin/access-codes
+router.post("/admin/access-codes", requireAdmin, async (req: any, res: any) => {
+  try {
+    const { role, code, maxUses } = req.body;
+    if (!role || !["student", "admin", "facility"].includes(role)) {
+      return res.status(400).json({ error: "Valid role required" });
+    }
+    const finalCode = code
+      ? String(code).toUpperCase().trim()
+      : `${role.toUpperCase().slice(0, 3)}-${randomBytes(3).toString("hex").toUpperCase()}`;
+    const [created] = await db
+      .insert(accessCodesTable)
+      .values({ code: finalCode, role, maxUses: maxUses ? Number(maxUses) : 100 })
+      .returning();
+    res.status(201).json(created);
+  } catch (err: any) {
+    if (err?.code === "23505") {
+      return res.status(400).json({ error: "Code already exists, try a different one" });
+    }
+    req.log.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// DELETE /api/admin/access-codes/:id
+router.delete("/admin/access-codes/:id", requireAdmin, async (req: any, res: any) => {
+  try {
+    const id = Number(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+    await db.delete(accessCodesTable).where(eq(accessCodesTable.id, id));
+    res.json({ error: "Access code deleted" });
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Internal server error" });

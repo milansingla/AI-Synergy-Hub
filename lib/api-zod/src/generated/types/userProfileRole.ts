@@ -12,4 +12,5 @@ export type UserProfileRole =
 export const UserProfileRole = {
   student: "student",
   admin: "admin",
+  facility: "facility",
 } as const;

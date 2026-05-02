@@ -37,11 +37,13 @@ A full-stack AI-powered B2B SaaS platform for universities where students upload
 
 PostgreSQL via `DATABASE_URL`. Schema defined in `lib/db/src/schema/`:
 
-- `users` — Clerk user IDs, email, role (student/admin)
+- `users` — Clerk user IDs, email, role (student/facility/admin)
 - `job_descriptions` — rawText, role, company, skills (jsonb), experienceLevel, responsibilities (jsonb)
 - `interviews` — links user + JD, tracks status (in_progress/completed)
 - `interview_messages` — per-message log (role: ai/user)
 - `evaluations` — AI-scored evaluation: overallScore, feedback, strengths, improvements, criteriaScores (6-dim jsonb), questionEvals (jsonb)
+- `invites` — email + role + token; checked on first sign-up to auto-assign role
+- `access_codes` — shareable code + role + maxUses + usedCount; redeemable from Settings
 
 ## API Routes
 

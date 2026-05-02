@@ -7,13 +7,22 @@ import {
   useDeleteUser,
   useListAllInterviews,
   useDeleteAdminInterview,
+  useListInvites,
+  useCreateInvite,
+  useDeleteInvite,
+  useListAccessCodes,
+  useCreateAccessCode,
+  useDeleteAccessCode,
   getListAllUsersQueryKey,
   getGetAdminStatsQueryKey,
   getListAllInterviewsQueryKey,
+  getListInvitesQueryKey,
+  getListAccessCodesQueryKey,
 } from "@workspace/api-client-react";
 import { AppLayout } from "@/components/layout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
@@ -44,12 +53,16 @@ import {
   ShieldCheck,
   UserX,
   Activity,
+  Mail,
+  KeyRound,
+  UserCheck,
+  Plus,
+  Copy,
+  ToggleLeft,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type Tab = "overview" | "users" | "interviews";
-
-/* ─── Helpers ───────────────────────────────────────────────────────────── */
+type Tab = "overview" | "users" | "interviews" | "access";
 
 function ScorePill({ score }: { score: number | null | undefined }) {
   if (score == null) return <span className="text-xs text-muted-foreground font-mono">—</span>;
@@ -62,6 +75,24 @@ function ScorePill({ score }: { score: number | null | undefined }) {
   return (
     <span className={cn("text-xs font-mono font-semibold border rounded px-1.5 py-0.5", color)}>
       {Math.round(score)}%
+    </span>
+  );
+}
+
+function RoleBadge({ role }: { role: string }) {
+  const cfg: Record<string, string> = {
+    admin: "bg-rose-500/15 text-rose-400 border-rose-500/20",
+    facility: "bg-violet-500/15 text-violet-400 border-violet-500/20",
+    student: "bg-cyan-500/15 text-cyan-400 border-cyan-500/20",
+  };
+  return (
+    <span
+      className={cn(
+        "text-[10px] font-mono font-semibold border rounded px-1.5 py-0.5",
+        cfg[role] ?? cfg.student
+      )}
+    >
+      {role}
     </span>
   );
 }
@@ -86,7 +117,7 @@ function OverviewTab() {
     <div className="space-y-6">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {cards.map(({ label, value, icon: Icon }) => (
-          <div key={label} className="rounded-xl border border-border bg-card p-5">
+          <div key={label} className="rounded-xl border border-border bg-card p-4 md:p-5">
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs text-muted-foreground uppercase tracking-wider font-medium">
                 {label}
@@ -96,13 +127,12 @@ function OverviewTab() {
             {isLoading ? (
               <Skeleton className="h-8 w-16" />
             ) : (
-              <p className="text-3xl font-bold font-mono">{value}</p>
+              <p className="text-2xl md:text-3xl font-bold font-mono">{value}</p>
             )}
           </div>
         ))}
       </div>
 
-      {/* Completion rate bar */}
       {!isLoading && stats && stats.totalInterviews > 0 && (
         <div className="rounded-xl border border-border bg-card p-5">
           <div className="flex items-center justify-between mb-3">
@@ -139,7 +169,7 @@ function UsersTab() {
   const [pendingDelete, setPendingDelete] = useState<{ id: string; email: string } | null>(null);
   const [savingRole, setSavingRole] = useState<string | null>(null);
 
-  const handleRoleChange = async (userId: string, role: "student" | "admin") => {
+  const handleRoleChange = async (userId: string, role: "student" | "admin" | "facility") => {
     setSavingRole(userId);
     try {
       await updateRole.mutateAsync({ userId, data: { role } });
@@ -181,9 +211,7 @@ function UsersTab() {
 
         {isLoading ? (
           <div className="p-5 space-y-3">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <Skeleton key={i} className="h-12 w-full" />
-            ))}
+            {[1, 2, 3, 4, 5].map((i) => <Skeleton key={i} className="h-14 w-full" />)}
           </div>
         ) : !users?.length ? (
           <div className="flex items-center justify-center py-16 text-sm text-muted-foreground">
@@ -191,7 +219,8 @@ function UsersTab() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-[2fr_1fr_140px_80px_80px_48px] gap-3 px-5 py-3 border-b border-border text-xs text-muted-foreground uppercase tracking-wider font-medium">
+            {/* Desktop header */}
+            <div className="hidden md:grid grid-cols-[2fr_1fr_160px_80px_80px_48px] gap-3 px-5 py-3 border-b border-border text-xs text-muted-foreground uppercase tracking-wider font-medium">
               <span>Email</span>
               <span>User ID</span>
               <span>Role</span>
@@ -199,50 +228,80 @@ function UsersTab() {
               <span>Joined</span>
               <span />
             </div>
+
             <div className="divide-y divide-border">
               {users.map((user) => (
-                <div
-                  key={user.id}
-                  className="grid grid-cols-[2fr_1fr_140px_80px_80px_48px] gap-3 items-center px-5 py-3"
-                >
-                  <span className="text-sm font-mono truncate text-foreground">
-                    {user.email}
-                  </span>
-                  <span className="text-xs font-mono text-muted-foreground truncate">
-                    {user.id.slice(0, 12)}…
-                  </span>
-
-                  {/* Inline role selector */}
-                  <Select
-                    value={user.role}
-                    onValueChange={(v) => handleRoleChange(user.id, v as "student" | "admin")}
-                    disabled={savingRole === user.id}
-                  >
-                    <SelectTrigger className="h-7 text-xs w-[120px] bg-background border-border">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="student">student</SelectItem>
-                      <SelectItem value="admin">admin</SelectItem>
-                    </SelectContent>
-                  </Select>
-
-                  <span className="text-sm font-mono text-muted-foreground">
-                    {user.totalInterviews}
-                  </span>
-
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground font-mono">
-                    <Clock size={10} />
-                    {new Date(user.createdAt).toLocaleDateString()}
+                <div key={user.id}>
+                  {/* Desktop row */}
+                  <div className="hidden md:grid grid-cols-[2fr_1fr_160px_80px_80px_48px] gap-3 items-center px-5 py-3">
+                    <span className="text-sm font-mono truncate">{user.email}</span>
+                    <span className="text-xs font-mono text-muted-foreground truncate">
+                      {user.id.slice(0, 12)}…
+                    </span>
+                    <Select
+                      value={user.role}
+                      onValueChange={(v) => handleRoleChange(user.id, v as "student" | "admin" | "facility")}
+                      disabled={savingRole === user.id}
+                    >
+                      <SelectTrigger className="h-7 text-xs w-[140px] bg-background border-border">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="student">student</SelectItem>
+                        <SelectItem value="facility">facility</SelectItem>
+                        <SelectItem value="admin">admin</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <span className="text-sm font-mono text-muted-foreground">
+                      {user.totalInterviews}
+                    </span>
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground font-mono">
+                      <Clock size={10} />
+                      {new Date(user.createdAt).toLocaleDateString()}
+                    </div>
+                    <button
+                      onClick={() => setPendingDelete({ id: user.id, email: user.email })}
+                      className="flex items-center justify-center w-8 h-8 rounded-md text-muted-foreground hover:text-red-400 hover:bg-red-400/10 transition-colors"
+                    >
+                      <Trash2 size={13} />
+                    </button>
                   </div>
 
-                  <button
-                    onClick={() => setPendingDelete({ id: user.id, email: user.email })}
-                    className="flex items-center justify-center w-8 h-8 rounded-md text-muted-foreground hover:text-red-400 hover:bg-red-400/10 transition-colors"
-                    title="Delete user"
-                  >
-                    <Trash2 size={13} />
-                  </button>
+                  {/* Mobile card */}
+                  <div className="md:hidden px-4 py-3 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm font-mono truncate flex-1">{user.email}</p>
+                      <button
+                        onClick={() => setPendingDelete({ id: user.id, email: user.email })}
+                        className="p-1.5 text-muted-foreground hover:text-red-400 transition-colors shrink-0"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <RoleBadge role={user.role} />
+                      <span className="text-xs text-muted-foreground font-mono">
+                        {user.totalInterviews} interviews
+                      </span>
+                      <span className="text-xs text-muted-foreground font-mono ml-auto">
+                        {new Date(user.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <Select
+                      value={user.role}
+                      onValueChange={(v) => handleRoleChange(user.id, v as "student" | "admin" | "facility")}
+                      disabled={savingRole === user.id}
+                    >
+                      <SelectTrigger className="h-7 text-xs w-full bg-background border-border">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="student">student</SelectItem>
+                        <SelectItem value="facility">facility</SelectItem>
+                        <SelectItem value="admin">admin</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               ))}
             </div>
@@ -251,13 +310,13 @@ function UsersTab() {
       </div>
 
       <AlertDialog open={!!pendingDelete} onOpenChange={() => setPendingDelete(null)}>
-        <AlertDialogContent className="bg-card border-border">
+        <AlertDialogContent className="bg-card border-border mx-4">
           <AlertDialogHeader>
             <AlertDialogTitle>Delete user?</AlertDialogTitle>
             <AlertDialogDescription>
               This will permanently delete{" "}
               <span className="font-mono text-foreground">{pendingDelete?.email}</span> and all
-              their interviews, messages, and evaluations. This action cannot be undone.
+              their data. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -313,9 +372,7 @@ function InterviewsTab() {
 
         {isLoading ? (
           <div className="p-5 space-y-3">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <Skeleton key={i} className="h-12 w-full" />
-            ))}
+            {[1, 2, 3, 4, 5].map((i) => <Skeleton key={i} className="h-12 w-full" />)}
           </div>
         ) : !interviews?.length ? (
           <div className="flex items-center justify-center py-16 text-sm text-muted-foreground">
@@ -323,7 +380,7 @@ function InterviewsTab() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-[2fr_2fr_100px_80px_80px_48px] gap-3 px-5 py-3 border-b border-border text-xs text-muted-foreground uppercase tracking-wider font-medium">
+            <div className="hidden md:grid grid-cols-[2fr_2fr_100px_80px_80px_48px] gap-3 px-5 py-3 border-b border-border text-xs text-muted-foreground uppercase tracking-wider font-medium">
               <span>Role</span>
               <span>User</span>
               <span>Status</span>
@@ -333,49 +390,68 @@ function InterviewsTab() {
             </div>
             <div className="divide-y divide-border">
               {interviews.map((iv) => (
-                <div
-                  key={iv.id}
-                  className="grid grid-cols-[2fr_2fr_100px_80px_80px_48px] gap-3 items-center px-5 py-3"
-                >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-7 h-7 rounded-md bg-accent flex items-center justify-center shrink-0">
-                      <MessageSquare size={11} className="text-primary" />
+                <div key={iv.id}>
+                  {/* Desktop row */}
+                  <div className="hidden md:grid grid-cols-[2fr_2fr_100px_80px_80px_48px] gap-3 items-center px-5 py-3">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="w-7 h-7 rounded-md bg-accent flex items-center justify-center shrink-0">
+                        <MessageSquare size={11} className="text-primary" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium truncate">{iv.role}</p>
+                        <p className="text-xs text-muted-foreground font-mono">#{iv.id}</p>
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium truncate">{iv.role}</p>
-                      <p className="text-xs text-muted-foreground font-mono">#{iv.id}</p>
+                    <span className="text-xs font-mono text-muted-foreground truncate">
+                      {iv.userEmail}
+                    </span>
+                    <Badge
+                      variant={iv.status === "completed" ? "default" : "secondary"}
+                      className={cn(
+                        "text-xs font-mono h-5 w-fit",
+                        iv.status === "completed" && "bg-green-500/15 text-green-400 border-green-500/20"
+                      )}
+                    >
+                      {iv.status === "completed" ? "done" : "live"}
+                    </Badge>
+                    <ScorePill score={iv.score} />
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground font-mono">
+                      <Clock size={10} />
+                      {new Date(iv.createdAt).toLocaleDateString()}
                     </div>
+                    <button
+                      onClick={() => setPendingDelete({ id: iv.id, role: iv.role })}
+                      className="flex items-center justify-center w-8 h-8 rounded-md text-muted-foreground hover:text-red-400 hover:bg-red-400/10 transition-colors"
+                    >
+                      <Trash2 size={13} />
+                    </button>
                   </div>
 
-                  <span className="text-xs font-mono text-muted-foreground truncate">
-                    {iv.userEmail}
-                  </span>
-
-                  <Badge
-                    variant={iv.status === "completed" ? "default" : "secondary"}
-                    className={cn(
-                      "text-xs font-mono h-5 w-fit",
-                      iv.status === "completed" &&
-                        "bg-green-500/15 text-green-400 border-green-500/20"
-                    )}
-                  >
-                    {iv.status === "completed" ? "done" : "in progress"}
-                  </Badge>
-
-                  <ScorePill score={iv.score} />
-
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground font-mono">
-                    <Clock size={10} />
-                    {new Date(iv.createdAt).toLocaleDateString()}
+                  {/* Mobile card */}
+                  <div className="md:hidden px-4 py-3 space-y-1.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm font-medium truncate flex-1">{iv.role}</p>
+                      <ScorePill score={iv.score} />
+                      <button
+                        onClick={() => setPendingDelete({ id: iv.id, role: iv.role })}
+                        className="p-1.5 text-muted-foreground hover:text-red-400 transition-colors"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground font-mono">
+                      <span className="truncate flex-1">{iv.userEmail}</span>
+                      <Badge
+                        variant={iv.status === "completed" ? "default" : "secondary"}
+                        className={cn(
+                          "text-xs font-mono h-4",
+                          iv.status === "completed" && "bg-green-500/15 text-green-400 border-green-500/20"
+                        )}
+                      >
+                        {iv.status === "completed" ? "done" : "live"}
+                      </Badge>
+                    </div>
                   </div>
-
-                  <button
-                    onClick={() => setPendingDelete({ id: iv.id, role: iv.role })}
-                    className="flex items-center justify-center w-8 h-8 rounded-md text-muted-foreground hover:text-red-400 hover:bg-red-400/10 transition-colors"
-                    title="Delete interview"
-                  >
-                    <Trash2 size={13} />
-                  </button>
                 </div>
               ))}
             </div>
@@ -384,13 +460,13 @@ function InterviewsTab() {
       </div>
 
       <AlertDialog open={!!pendingDelete} onOpenChange={() => setPendingDelete(null)}>
-        <AlertDialogContent className="bg-card border-border">
+        <AlertDialogContent className="bg-card border-border mx-4">
           <AlertDialogHeader>
             <AlertDialogTitle>Delete interview?</AlertDialogTitle>
             <AlertDialogDescription>
               This will permanently delete the{" "}
               <span className="font-mono text-foreground">{pendingDelete?.role}</span> interview
-              along with all messages and its evaluation. This action cannot be undone.
+              along with all messages and evaluation.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -399,12 +475,389 @@ function InterviewsTab() {
               onClick={handleDeleteConfirm}
               className="bg-red-500 hover:bg-red-600 text-white"
             >
-              Delete interview
+              Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </>
+  );
+}
+
+/* ─── Access tab — 3 grant methods ─────────────────────────────────────── */
+
+type AccessMethod = "role" | "invite" | "code";
+
+function AccessTab() {
+  const [method, setMethod] = useState<AccessMethod>("role");
+
+  return (
+    <div className="space-y-6">
+      {/* Method selector */}
+      <div className="rounded-xl border border-border bg-card p-5">
+        <h2 className="text-sm font-semibold mb-4">Grant access method</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {[
+            {
+              id: "role" as const,
+              icon: UserCheck,
+              title: "Role Assignment",
+              desc: "Directly change a registered user's role from the Users tab",
+            },
+            {
+              id: "invite" as const,
+              icon: Mail,
+              title: "Email Invite",
+              desc: "Pre-register an email address with a role — applied on first sign-up",
+            },
+            {
+              id: "code" as const,
+              icon: KeyRound,
+              title: "Access Code",
+              desc: "Generate a shareable code — users enter it in Settings to upgrade their role",
+            },
+          ].map(({ id, icon: Icon, title, desc }) => (
+            <button
+              key={id}
+              onClick={() => setMethod(id)}
+              className={cn(
+                "flex flex-col items-start gap-2 p-4 rounded-lg border text-left transition-all",
+                method === id
+                  ? "border-primary bg-primary/5 text-foreground"
+                  : "border-border bg-background/50 text-muted-foreground hover:border-primary/50 hover:text-foreground"
+              )}
+            >
+              <Icon size={18} className={method === id ? "text-primary" : ""} />
+              <div>
+                <p className="text-sm font-semibold">{title}</p>
+                <p className="text-xs mt-0.5 leading-relaxed">{desc}</p>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {method === "role" && <RoleAssignInfo />}
+      {method === "invite" && <InviteSection />}
+      {method === "code" && <AccessCodeSection />}
+    </div>
+  );
+}
+
+function RoleAssignInfo() {
+  return (
+    <div className="rounded-xl border border-border bg-card p-5">
+      <div className="flex items-start gap-3">
+        <UserCheck size={16} className="text-primary mt-0.5 shrink-0" />
+        <div className="space-y-1.5">
+          <p className="text-sm font-semibold">Direct role assignment</p>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            Switch to the <strong className="text-foreground">Users</strong> tab. Each user has a
+            role dropdown — change it to <span className="font-mono text-violet-400">facility</span>,{" "}
+            <span className="font-mono text-rose-400">admin</span>, or{" "}
+            <span className="font-mono text-cyan-400">student</span>. The change takes effect
+            immediately on their next page load.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function InviteSection() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const { data: invites, isLoading } = useListInvites();
+  const createInvite = useCreateInvite();
+  const deleteInvite = useDeleteInvite();
+  const [email, setEmail] = useState("");
+  const [role, setRole] = useState<"student" | "facility" | "admin">("facility");
+  const [creating, setCreating] = useState(false);
+
+  const handleCreate = async () => {
+    if (!email.trim()) return;
+    setCreating(true);
+    try {
+      await createInvite.mutateAsync({ data: { email: email.trim(), role } });
+      await queryClient.invalidateQueries({ queryKey: getListInvitesQueryKey() });
+      toast({ title: "Invite created", description: `${email} will get role '${role}' on sign-up` });
+      setEmail("");
+    } catch {
+      toast({ title: "Failed to create invite", variant: "destructive" });
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    try {
+      await deleteInvite.mutateAsync({ id });
+      await queryClient.invalidateQueries({ queryKey: getListInvitesQueryKey() });
+      toast({ title: "Invite removed" });
+    } catch {
+      toast({ title: "Failed to remove invite", variant: "destructive" });
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Create form */}
+      <div className="rounded-xl border border-border bg-card p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <Mail size={14} className="text-primary" />
+          <h3 className="text-sm font-semibold">New email invite</h3>
+        </div>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <Input
+            placeholder="student@college.edu"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleCreate()}
+            className="flex-1 bg-background border-border text-sm h-9"
+          />
+          <Select value={role} onValueChange={(v) => setRole(v as typeof role)}>
+            <SelectTrigger className="w-full sm:w-[130px] h-9 text-sm bg-background border-border">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="student">student</SelectItem>
+              <SelectItem value="facility">facility</SelectItem>
+              <SelectItem value="admin">admin</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button size="sm" onClick={handleCreate} disabled={creating || !email.trim()} className="h-9 gap-1.5">
+            <Plus size={13} />
+            Add
+          </Button>
+        </div>
+        <p className="text-xs text-muted-foreground mt-3">
+          When this email address signs up via Clerk, they will automatically receive the selected role.
+        </p>
+      </div>
+
+      {/* Invite list */}
+      <div className="rounded-xl border border-border bg-card overflow-hidden">
+        <div className="px-5 py-4 border-b border-border flex items-center gap-2">
+          <Mail size={14} className="text-primary" />
+          <h3 className="text-sm font-semibold">Pending invites</h3>
+          {invites && (
+            <span className="ml-auto text-xs font-mono text-muted-foreground">
+              {invites.filter((i) => !i.used).length} pending
+            </span>
+          )}
+        </div>
+        {isLoading ? (
+          <div className="p-5 space-y-2">
+            {[1, 2, 3].map((i) => <Skeleton key={i} className="h-10 w-full" />)}
+          </div>
+        ) : !invites?.length ? (
+          <div className="py-10 text-center text-sm text-muted-foreground">No invites yet</div>
+        ) : (
+          <div className="divide-y divide-border">
+            {invites.map((inv) => (
+              <div key={inv.id} className="flex items-center gap-3 px-5 py-3">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-mono truncate">{inv.email}</p>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span
+                      className={cn(
+                        "text-[10px] font-mono font-semibold border rounded px-1.5 py-0.5",
+                        inv.role === "facility"
+                          ? "bg-violet-500/15 text-violet-400 border-violet-500/20"
+                          : inv.role === "admin"
+                          ? "bg-rose-500/15 text-rose-400 border-rose-500/20"
+                          : "bg-cyan-500/15 text-cyan-400 border-cyan-500/20"
+                      )}
+                    >
+                      {inv.role}
+                    </span>
+                    {inv.used ? (
+                      <span className="text-[10px] text-green-400 font-mono">✓ used</span>
+                    ) : (
+                      <span className="text-[10px] text-muted-foreground font-mono">pending</span>
+                    )}
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleDelete(inv.id)}
+                  className="p-1.5 text-muted-foreground hover:text-red-400 transition-colors"
+                >
+                  <Trash2 size={13} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function AccessCodeSection() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const { data: codes, isLoading } = useListAccessCodes();
+  const createCode = useCreateAccessCode();
+  const deleteCode = useDeleteAccessCode();
+  const [role, setRole] = useState<"student" | "facility" | "admin">("facility");
+  const [customCode, setCustomCode] = useState("");
+  const [maxUses, setMaxUses] = useState("50");
+  const [creating, setCreating] = useState(false);
+
+  const handleCreate = async () => {
+    setCreating(true);
+    try {
+      await createCode.mutateAsync({
+        data: {
+          role,
+          ...(customCode.trim() ? { code: customCode.trim() } : {}),
+          maxUses: Number(maxUses) || 50,
+        },
+      });
+      await queryClient.invalidateQueries({ queryKey: getListAccessCodesQueryKey() });
+      toast({ title: "Access code created" });
+      setCustomCode("");
+    } catch (e: any) {
+      toast({ title: "Failed to create code", variant: "destructive" });
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    try {
+      await deleteCode.mutateAsync({ id });
+      await queryClient.invalidateQueries({ queryKey: getListAccessCodesQueryKey() });
+      toast({ title: "Code deleted" });
+    } catch {
+      toast({ title: "Failed to delete code", variant: "destructive" });
+    }
+  };
+
+  const copyCode = (code: string) => {
+    navigator.clipboard.writeText(code);
+    toast({ title: "Copied to clipboard" });
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Create form */}
+      <div className="rounded-xl border border-border bg-card p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <KeyRound size={14} className="text-primary" />
+          <h3 className="text-sm font-semibold">Generate access code</h3>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <Select value={role} onValueChange={(v) => setRole(v as typeof role)}>
+            <SelectTrigger className="h-9 text-sm bg-background border-border">
+              <SelectValue placeholder="Role" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="student">student</SelectItem>
+              <SelectItem value="facility">facility</SelectItem>
+              <SelectItem value="admin">admin</SelectItem>
+            </SelectContent>
+          </Select>
+          <Input
+            placeholder="Custom code (optional)"
+            value={customCode}
+            onChange={(e) => setCustomCode(e.target.value.toUpperCase())}
+            className="bg-background border-border text-sm h-9 font-mono uppercase"
+          />
+          <Input
+            type="number"
+            placeholder="Max uses"
+            value={maxUses}
+            onChange={(e) => setMaxUses(e.target.value)}
+            className="bg-background border-border text-sm h-9 font-mono"
+          />
+        </div>
+        <div className="flex items-center gap-3 mt-3">
+          <Button size="sm" onClick={handleCreate} disabled={creating} className="h-9 gap-1.5">
+            <Plus size={13} />
+            Generate
+          </Button>
+          <p className="text-xs text-muted-foreground">
+            Leave the code field empty to auto-generate one. Users enter this in Settings → Redeem Code.
+          </p>
+        </div>
+      </div>
+
+      {/* Codes list */}
+      <div className="rounded-xl border border-border bg-card overflow-hidden">
+        <div className="px-5 py-4 border-b border-border flex items-center gap-2">
+          <KeyRound size={14} className="text-primary" />
+          <h3 className="text-sm font-semibold">Active codes</h3>
+          {codes && (
+            <span className="ml-auto text-xs font-mono text-muted-foreground">
+              {codes.filter((c) => c.active).length} active
+            </span>
+          )}
+        </div>
+        {isLoading ? (
+          <div className="p-5 space-y-2">
+            {[1, 2, 3].map((i) => <Skeleton key={i} className="h-12 w-full" />)}
+          </div>
+        ) : !codes?.length ? (
+          <div className="py-10 text-center text-sm text-muted-foreground">No codes yet</div>
+        ) : (
+          <div className="divide-y divide-border">
+            {codes.map((c) => (
+              <div key={c.id} className="flex items-center gap-3 px-5 py-3">
+                <div className="flex-1 min-w-0 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-mono font-bold tracking-wider text-foreground">
+                      {c.code}
+                    </span>
+                    <button
+                      onClick={() => copyCode(c.code)}
+                      className="p-1 text-muted-foreground hover:text-primary transition-colors"
+                    >
+                      <Copy size={11} />
+                    </button>
+                    <span
+                      className={cn(
+                        "text-[10px] font-mono font-semibold border rounded px-1.5 py-0.5",
+                        c.role === "facility"
+                          ? "bg-violet-500/15 text-violet-400 border-violet-500/20"
+                          : c.role === "admin"
+                          ? "bg-rose-500/15 text-rose-400 border-rose-500/20"
+                          : "bg-cyan-500/15 text-cyan-400 border-cyan-500/20"
+                      )}
+                    >
+                      {c.role}
+                    </span>
+                    {!c.active && (
+                      <span className="text-[10px] text-muted-foreground font-mono border border-border rounded px-1 py-0.5">
+                        inactive
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-xs text-muted-foreground font-mono">
+                    {c.usedCount} / {c.maxUses} uses
+                  </div>
+                </div>
+                {/* Usage bar */}
+                <div className="hidden sm:block w-20">
+                  <div className="h-1 rounded-full bg-secondary overflow-hidden">
+                    <div
+                      className="h-full bg-primary rounded-full"
+                      style={{ width: `${Math.min(100, (c.usedCount / c.maxUses) * 100)}%` }}
+                    />
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleDelete(c.id)}
+                  className="p-1.5 text-muted-foreground hover:text-red-400 transition-colors"
+                >
+                  <Trash2 size={13} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -417,32 +870,33 @@ export default function AdminPanel() {
     { id: "overview", label: "Overview", icon: BarChart3 },
     { id: "users", label: "Users", icon: Users },
     { id: "interviews", label: "Interviews", icon: MessageSquare },
+    { id: "access", label: "Access", icon: KeyRound },
   ];
 
   return (
     <AppLayout>
-      <div className="px-8 py-8 max-w-6xl">
+      <div className="px-4 md:px-8 py-6 md:py-8 max-w-6xl">
         {/* Header */}
-        <div className="flex items-center gap-3 mb-8">
+        <div className="flex items-center gap-3 mb-6 md:mb-8">
           <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
             <ShieldCheck size={18} className="text-primary" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Admin panel</h1>
+            <h1 className="text-xl md:text-2xl font-bold tracking-tight">Admin Panel</h1>
             <p className="text-sm text-muted-foreground mt-0.5">
               Platform management and oversight
             </p>
           </div>
         </div>
 
-        {/* Tab nav */}
-        <div className="flex items-center gap-1 p-1 rounded-lg bg-secondary/50 w-fit mb-6">
+        {/* Tab nav — scrollable on mobile */}
+        <div className="flex items-center gap-1 p-1 rounded-lg bg-secondary/50 w-fit mb-6 overflow-x-auto max-w-full">
           {tabs.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
               onClick={() => setTab(id)}
               className={cn(
-                "flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all",
+                "flex items-center gap-2 px-3 md:px-4 py-1.5 rounded-md text-sm font-medium transition-all whitespace-nowrap",
                 tab === id
                   ? "bg-background text-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground"
@@ -454,10 +908,10 @@ export default function AdminPanel() {
           ))}
         </div>
 
-        {/* Tab content */}
         {tab === "overview" && <OverviewTab />}
         {tab === "users" && <UsersTab />}
         {tab === "interviews" && <InterviewsTab />}
+        {tab === "access" && <AccessTab />}
       </div>
     </AppLayout>
   );

@@ -172,7 +172,7 @@ export const GetInterviewStatsResponse = zod.object({
 export const GetUserProfileResponse = zod.object({
   id: zod.string(),
   email: zod.string(),
-  role: zod.enum(["student", "admin"]),
+  role: zod.enum(["student", "admin", "facility"]),
   createdAt: zod.coerce.date(),
 });
 
@@ -180,13 +180,27 @@ export const GetUserProfileResponse = zod.object({
  * @summary Update user profile (role)
  */
 export const UpdateUserProfileBody = zod.object({
-  role: zod.enum(["student", "admin"]),
+  role: zod.enum(["student", "admin", "facility"]),
 });
 
 export const UpdateUserProfileResponse = zod.object({
   id: zod.string(),
   email: zod.string(),
-  role: zod.enum(["student", "admin"]),
+  role: zod.enum(["student", "admin", "facility"]),
+  createdAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Redeem an access code to change role
+ */
+export const RedeemAccessCodeBody = zod.object({
+  code: zod.string(),
+});
+
+export const RedeemAccessCodeResponse = zod.object({
+  id: zod.string(),
+  email: zod.string(),
+  role: zod.enum(["student", "admin", "facility"]),
   createdAt: zod.coerce.date(),
 });
 
@@ -220,7 +234,7 @@ export const UpdateUserRoleParams = zod.object({
 });
 
 export const UpdateUserRoleBody = zod.object({
-  role: zod.enum(["student", "admin"]),
+  role: zod.enum(["student", "admin", "facility"]),
 });
 
 export const UpdateUserRoleResponse = zod.object({
@@ -268,4 +282,96 @@ export const DeleteAdminInterviewParams = zod.object({
 
 export const DeleteAdminInterviewResponse = zod.object({
   error: zod.string(),
+});
+
+/**
+ * @summary List all email invites (admin only)
+ */
+export const ListInvitesResponseItem = zod.object({
+  id: zod.number(),
+  email: zod.string(),
+  role: zod.enum(["student", "admin", "facility"]),
+  token: zod.string(),
+  used: zod.boolean(),
+  createdAt: zod.coerce.date(),
+});
+export const ListInvitesResponse = zod.array(ListInvitesResponseItem);
+
+/**
+ * @summary Create an email invite (admin only)
+ */
+export const CreateInviteBody = zod.object({
+  email: zod.string(),
+  role: zod.enum(["student", "admin", "facility"]),
+});
+
+/**
+ * @summary Delete an invite (admin only)
+ */
+export const DeleteInviteParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const DeleteInviteResponse = zod.object({
+  error: zod.string(),
+});
+
+/**
+ * @summary List all access codes (admin only)
+ */
+export const ListAccessCodesResponseItem = zod.object({
+  id: zod.number(),
+  code: zod.string(),
+  role: zod.enum(["student", "admin", "facility"]),
+  active: zod.boolean(),
+  maxUses: zod.number(),
+  usedCount: zod.number(),
+  createdAt: zod.coerce.date(),
+});
+export const ListAccessCodesResponse = zod.array(ListAccessCodesResponseItem);
+
+/**
+ * @summary Create an access code (admin only)
+ */
+export const CreateAccessCodeBody = zod.object({
+  role: zod.enum(["student", "admin", "facility"]),
+  code: zod.string().optional(),
+  maxUses: zod.number().optional(),
+});
+
+/**
+ * @summary Delete an access code (admin only)
+ */
+export const DeleteAccessCodeParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const DeleteAccessCodeResponse = zod.object({
+  error: zod.string(),
+});
+
+/**
+ * @summary List all students with interview stats (facility only)
+ */
+export const ListFacilityStudentsResponseItem = zod.object({
+  id: zod.string(),
+  email: zod.string(),
+  totalInterviews: zod.number(),
+  completedInterviews: zod.number(),
+  averageScore: zod.number().nullish(),
+  lastActive: zod.coerce.date().nullish(),
+  createdAt: zod.coerce.date(),
+});
+export const ListFacilityStudentsResponse = zod.array(
+  ListFacilityStudentsResponseItem,
+);
+
+/**
+ * @summary Get aggregate student stats (facility only)
+ */
+export const GetFacilityStatsResponse = zod.object({
+  totalStudents: zod.number(),
+  activeThisWeek: zod.number(),
+  averageScore: zod.number(),
+  completionRate: zod.number(),
 });

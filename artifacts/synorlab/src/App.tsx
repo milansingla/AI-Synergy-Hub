@@ -13,6 +13,7 @@ import InterviewsList from "@/pages/interviews";
 import InterviewSession from "@/pages/interview-session";
 import InterviewResults from "@/pages/interview-results";
 import AdminPanel from "@/pages/admin";
+import FacilityPanel from "@/pages/facility";
 import Settings from "@/pages/settings";
 
 const queryClient = new QueryClient();
@@ -26,9 +27,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
       </div>
     );
   }
-  if (!isSignedIn) {
-    return <RedirectToSignIn />;
-  }
+  if (!isSignedIn) return <RedirectToSignIn />;
   return <>{children}</>;
 }
 
@@ -46,6 +45,26 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
   }
   if (!isSignedIn) return <RedirectToSignIn />;
   if (profile && profile.role !== "admin") {
+    navigate("/dashboard");
+    return null;
+  }
+  return <>{children}</>;
+}
+
+function FacilityRoute({ children }: { children: React.ReactNode }) {
+  const { isSignedIn, isLoaded } = useAuth();
+  const { data: profile, isLoading: profileLoading } = useGetUserProfile();
+  const [, navigate] = useLocation();
+
+  if (!isLoaded || profileLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+  if (!isSignedIn) return <RedirectToSignIn />;
+  if (profile && profile.role !== "facility" && profile.role !== "admin") {
     navigate("/dashboard");
     return null;
   }
@@ -101,6 +120,14 @@ function AppRoutes() {
 
       <Route path="/admin">
         <AdminRoute><AdminPanel /></AdminRoute>
+      </Route>
+
+      <Route path="/facility">
+        <FacilityRoute><FacilityPanel /></FacilityRoute>
+      </Route>
+
+      <Route path="/facility/students">
+        <FacilityRoute><FacilityPanel initialTab="students" /></FacilityRoute>
       </Route>
 
       <Route path="/settings">

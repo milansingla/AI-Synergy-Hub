@@ -152,6 +152,7 @@ export type UserProfileRole =
 export const UserProfileRole = {
   student: "student",
   admin: "admin",
+  facility: "facility",
 } as const;
 
 export interface UserProfile {
@@ -167,6 +168,7 @@ export type UpdateUserProfileBodyRole =
 export const UpdateUserProfileBodyRole = {
   student: "student",
   admin: "admin",
+  facility: "facility",
 } as const;
 
 export interface UpdateUserProfileBody {
@@ -194,6 +196,7 @@ export type AdminUpdateUserRoleBodyRole =
 export const AdminUpdateUserRoleBodyRole = {
   student: "student",
   admin: "admin",
+  facility: "facility",
 } as const;
 
 export interface AdminUpdateUserRoleBody {
@@ -217,4 +220,90 @@ export interface AdminInterviewSummary {
   score?: number | null;
   messageCount: number;
   createdAt: string;
+}
+
+export type InviteRole = (typeof InviteRole)[keyof typeof InviteRole];
+
+export const InviteRole = {
+  student: "student",
+  admin: "admin",
+  facility: "facility",
+} as const;
+
+export interface Invite {
+  id: number;
+  email: string;
+  role: InviteRole;
+  token: string;
+  used: boolean;
+  createdAt: string;
+}
+
+export type CreateInviteBodyRole =
+  (typeof CreateInviteBodyRole)[keyof typeof CreateInviteBodyRole];
+
+export const CreateInviteBodyRole = {
+  student: "student",
+  admin: "admin",
+  facility: "facility",
+} as const;
+
+export interface CreateInviteBody {
+  email: string;
+  role: CreateInviteBodyRole;
+}
+
+export type AccessCodeRole =
+  (typeof AccessCodeRole)[keyof typeof AccessCodeRole];
+
+export const AccessCodeRole = {
+  student: "student",
+  admin: "admin",
+  facility: "facility",
+} as const;
+
+export interface AccessCode {
+  id: number;
+  code: string;
+  role: AccessCodeRole;
+  active: boolean;
+  maxUses: number;
+  usedCount: number;
+  createdAt: string;
+}
+
+export type CreateAccessCodeBodyRole =
+  (typeof CreateAccessCodeBodyRole)[keyof typeof CreateAccessCodeBodyRole];
+
+export const CreateAccessCodeBodyRole = {
+  student: "student",
+  admin: "admin",
+  facility: "facility",
+} as const;
+
+export interface CreateAccessCodeBody {
+  role: CreateAccessCodeBodyRole;
+  code?: string;
+  maxUses?: number;
+}
+
+export interface RedeemCodeBody {
+  code: string;
+}
+
+export interface FacilityStudent {
+  id: string;
+  email: string;
+  totalInterviews: number;
+  completedInterviews: number;
+  averageScore?: number | null;
+  lastActive?: string | null;
+  createdAt: string;
+}
+
+export interface FacilityStats {
+  totalStudents: number;
+  activeThisWeek: number;
+  averageScore: number;
+  completionRate: number;
 }

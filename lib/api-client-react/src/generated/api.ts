@@ -18,19 +18,26 @@ import type {
 
 import type {
   AIMessage,
+  AccessCode,
   AdminInterviewSummary,
   AdminStats,
   AdminUpdateUserRoleBody,
   AdminUser,
   ApiError,
+  CreateAccessCodeBody,
   CreateInterviewBody,
+  CreateInviteBody,
   Evaluation,
+  FacilityStats,
+  FacilityStudent,
   HealthStatus,
   Interview,
   InterviewDetail,
   InterviewStats,
   InterviewSummary,
+  Invite,
   ParsedJD,
+  RedeemCodeBody,
   RespondToInterviewBody,
   UpdateUserProfileBody,
   UploadJDBody,
@@ -864,6 +871,92 @@ export const useUpdateUserProfile = <
 };
 
 /**
+ * @summary Redeem an access code to change role
+ */
+export const getRedeemAccessCodeUrl = () => {
+  return `/api/users/redeem-code`;
+};
+
+export const redeemAccessCode = async (
+  redeemCodeBody: RedeemCodeBody,
+  options?: RequestInit,
+): Promise<UserProfile> => {
+  return customFetch<UserProfile>(getRedeemAccessCodeUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(redeemCodeBody),
+  });
+};
+
+export const getRedeemAccessCodeMutationOptions = <
+  TError = ErrorType<ApiError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof redeemAccessCode>>,
+    TError,
+    { data: BodyType<RedeemCodeBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof redeemAccessCode>>,
+  TError,
+  { data: BodyType<RedeemCodeBody> },
+  TContext
+> => {
+  const mutationKey = ["redeemAccessCode"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof redeemAccessCode>>,
+    { data: BodyType<RedeemCodeBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return redeemAccessCode(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RedeemAccessCodeMutationResult = NonNullable<
+  Awaited<ReturnType<typeof redeemAccessCode>>
+>;
+export type RedeemAccessCodeMutationBody = BodyType<RedeemCodeBody>;
+export type RedeemAccessCodeMutationError = ErrorType<ApiError>;
+
+/**
+ * @summary Redeem an access code to change role
+ */
+export const useRedeemAccessCode = <
+  TError = ErrorType<ApiError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof redeemAccessCode>>,
+    TError,
+    { data: BodyType<RedeemCodeBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof redeemAccessCode>>,
+  TError,
+  { data: BodyType<RedeemCodeBody> },
+  TContext
+> => {
+  return useMutation(getRedeemAccessCodeMutationOptions(options));
+};
+
+/**
  * @summary List all users (admin only)
  */
 export const getListAllUsersUrl = () => {
@@ -1342,3 +1435,641 @@ export const useDeleteAdminInterview = <
 > => {
   return useMutation(getDeleteAdminInterviewMutationOptions(options));
 };
+
+/**
+ * @summary List all email invites (admin only)
+ */
+export const getListInvitesUrl = () => {
+  return `/api/admin/invites`;
+};
+
+export const listInvites = async (options?: RequestInit): Promise<Invite[]> => {
+  return customFetch<Invite[]>(getListInvitesUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListInvitesQueryKey = () => {
+  return [`/api/admin/invites`] as const;
+};
+
+export const getListInvitesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listInvites>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listInvites>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListInvitesQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listInvites>>> = ({
+    signal,
+  }) => listInvites({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listInvites>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListInvitesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listInvites>>
+>;
+export type ListInvitesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List all email invites (admin only)
+ */
+
+export function useListInvites<
+  TData = Awaited<ReturnType<typeof listInvites>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listInvites>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListInvitesQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create an email invite (admin only)
+ */
+export const getCreateInviteUrl = () => {
+  return `/api/admin/invites`;
+};
+
+export const createInvite = async (
+  createInviteBody: CreateInviteBody,
+  options?: RequestInit,
+): Promise<Invite> => {
+  return customFetch<Invite>(getCreateInviteUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createInviteBody),
+  });
+};
+
+export const getCreateInviteMutationOptions = <
+  TError = ErrorType<ApiError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createInvite>>,
+    TError,
+    { data: BodyType<CreateInviteBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createInvite>>,
+  TError,
+  { data: BodyType<CreateInviteBody> },
+  TContext
+> => {
+  const mutationKey = ["createInvite"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createInvite>>,
+    { data: BodyType<CreateInviteBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createInvite(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateInviteMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createInvite>>
+>;
+export type CreateInviteMutationBody = BodyType<CreateInviteBody>;
+export type CreateInviteMutationError = ErrorType<ApiError>;
+
+/**
+ * @summary Create an email invite (admin only)
+ */
+export const useCreateInvite = <
+  TError = ErrorType<ApiError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createInvite>>,
+    TError,
+    { data: BodyType<CreateInviteBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createInvite>>,
+  TError,
+  { data: BodyType<CreateInviteBody> },
+  TContext
+> => {
+  return useMutation(getCreateInviteMutationOptions(options));
+};
+
+/**
+ * @summary Delete an invite (admin only)
+ */
+export const getDeleteInviteUrl = (id: number) => {
+  return `/api/admin/invites/${id}`;
+};
+
+export const deleteInvite = async (
+  id: number,
+  options?: RequestInit,
+): Promise<ApiError> => {
+  return customFetch<ApiError>(getDeleteInviteUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteInviteMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteInvite>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteInvite>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["deleteInvite"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteInvite>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteInvite(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteInviteMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteInvite>>
+>;
+
+export type DeleteInviteMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Delete an invite (admin only)
+ */
+export const useDeleteInvite = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteInvite>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteInvite>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getDeleteInviteMutationOptions(options));
+};
+
+/**
+ * @summary List all access codes (admin only)
+ */
+export const getListAccessCodesUrl = () => {
+  return `/api/admin/access-codes`;
+};
+
+export const listAccessCodes = async (
+  options?: RequestInit,
+): Promise<AccessCode[]> => {
+  return customFetch<AccessCode[]>(getListAccessCodesUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListAccessCodesQueryKey = () => {
+  return [`/api/admin/access-codes`] as const;
+};
+
+export const getListAccessCodesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listAccessCodes>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listAccessCodes>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListAccessCodesQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listAccessCodes>>> = ({
+    signal,
+  }) => listAccessCodes({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listAccessCodes>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListAccessCodesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listAccessCodes>>
+>;
+export type ListAccessCodesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List all access codes (admin only)
+ */
+
+export function useListAccessCodes<
+  TData = Awaited<ReturnType<typeof listAccessCodes>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listAccessCodes>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListAccessCodesQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create an access code (admin only)
+ */
+export const getCreateAccessCodeUrl = () => {
+  return `/api/admin/access-codes`;
+};
+
+export const createAccessCode = async (
+  createAccessCodeBody: CreateAccessCodeBody,
+  options?: RequestInit,
+): Promise<AccessCode> => {
+  return customFetch<AccessCode>(getCreateAccessCodeUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createAccessCodeBody),
+  });
+};
+
+export const getCreateAccessCodeMutationOptions = <
+  TError = ErrorType<ApiError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createAccessCode>>,
+    TError,
+    { data: BodyType<CreateAccessCodeBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createAccessCode>>,
+  TError,
+  { data: BodyType<CreateAccessCodeBody> },
+  TContext
+> => {
+  const mutationKey = ["createAccessCode"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createAccessCode>>,
+    { data: BodyType<CreateAccessCodeBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createAccessCode(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateAccessCodeMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createAccessCode>>
+>;
+export type CreateAccessCodeMutationBody = BodyType<CreateAccessCodeBody>;
+export type CreateAccessCodeMutationError = ErrorType<ApiError>;
+
+/**
+ * @summary Create an access code (admin only)
+ */
+export const useCreateAccessCode = <
+  TError = ErrorType<ApiError>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createAccessCode>>,
+    TError,
+    { data: BodyType<CreateAccessCodeBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createAccessCode>>,
+  TError,
+  { data: BodyType<CreateAccessCodeBody> },
+  TContext
+> => {
+  return useMutation(getCreateAccessCodeMutationOptions(options));
+};
+
+/**
+ * @summary Delete an access code (admin only)
+ */
+export const getDeleteAccessCodeUrl = (id: number) => {
+  return `/api/admin/access-codes/${id}`;
+};
+
+export const deleteAccessCode = async (
+  id: number,
+  options?: RequestInit,
+): Promise<ApiError> => {
+  return customFetch<ApiError>(getDeleteAccessCodeUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteAccessCodeMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteAccessCode>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteAccessCode>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["deleteAccessCode"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteAccessCode>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteAccessCode(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteAccessCodeMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteAccessCode>>
+>;
+
+export type DeleteAccessCodeMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Delete an access code (admin only)
+ */
+export const useDeleteAccessCode = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteAccessCode>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteAccessCode>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getDeleteAccessCodeMutationOptions(options));
+};
+
+/**
+ * @summary List all students with interview stats (facility only)
+ */
+export const getListFacilityStudentsUrl = () => {
+  return `/api/facility/students`;
+};
+
+export const listFacilityStudents = async (
+  options?: RequestInit,
+): Promise<FacilityStudent[]> => {
+  return customFetch<FacilityStudent[]>(getListFacilityStudentsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListFacilityStudentsQueryKey = () => {
+  return [`/api/facility/students`] as const;
+};
+
+export const getListFacilityStudentsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listFacilityStudents>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listFacilityStudents>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListFacilityStudentsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listFacilityStudents>>
+  > = ({ signal }) => listFacilityStudents({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listFacilityStudents>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListFacilityStudentsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listFacilityStudents>>
+>;
+export type ListFacilityStudentsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List all students with interview stats (facility only)
+ */
+
+export function useListFacilityStudents<
+  TData = Awaited<ReturnType<typeof listFacilityStudents>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listFacilityStudents>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListFacilityStudentsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get aggregate student stats (facility only)
+ */
+export const getGetFacilityStatsUrl = () => {
+  return `/api/facility/stats`;
+};
+
+export const getFacilityStats = async (
+  options?: RequestInit,
+): Promise<FacilityStats> => {
+  return customFetch<FacilityStats>(getGetFacilityStatsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetFacilityStatsQueryKey = () => {
+  return [`/api/facility/stats`] as const;
+};
+
+export const getGetFacilityStatsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getFacilityStats>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getFacilityStats>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetFacilityStatsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getFacilityStats>>
+  > = ({ signal }) => getFacilityStats({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getFacilityStats>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetFacilityStatsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getFacilityStats>>
+>;
+export type GetFacilityStatsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get aggregate student stats (facility only)
+ */
+
+export function useGetFacilityStats<
+  TData = Awaited<ReturnType<typeof getFacilityStats>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getFacilityStats>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetFacilityStatsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
