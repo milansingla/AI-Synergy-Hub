@@ -1,21 +1,22 @@
 import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ClerkProvider, RedirectToSignIn, useAuth, SignIn, SignUp } from "@clerk/react";
 import { useGetUserProfile } from "@/hooks/api";
-import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
-import Dashboard from "@/pages/dashboard";
-import JDNew from "@/pages/jd-new";
-import InterviewsList from "@/pages/interviews";
-import InterviewSession from "@/pages/interview-session";
-import InterviewResults from "@/pages/interview-results";
-import AdminPanel from "@/pages/admin";
-import FacilityPanel from "@/pages/facility";
-import Settings from "@/pages/settings";
-import ProfileSetup from "@/pages/profile-setup";
+
+const NotFound = lazy(() => import("@/pages/not-found"));
+const Dashboard = lazy(() => import("@/pages/dashboard"));
+const JDNew = lazy(() => import("@/pages/jd-new"));
+const InterviewsList = lazy(() => import("@/pages/interviews"));
+const InterviewSession = lazy(() => import("@/pages/interview-session"));
+const InterviewResults = lazy(() => import("@/pages/interview-results"));
+const AdminPanel = lazy(() => import("@/pages/admin"));
+const FacilityPanel = lazy(() => import("@/pages/facility"));
+const Settings = lazy(() => import("@/pages/settings"));
+const ProfileSetup = lazy(() => import("@/pages/profile-setup"));
 
 const queryClient = new QueryClient();
 
@@ -100,73 +101,75 @@ function ProfileSetupRoute() {
 
 function AppRoutes() {
   return (
-    <Switch>
-      <Route path="/" component={Landing} />
+    <Suspense fallback={<Spinner />}>
+      <Switch>
+        <Route path="/" component={Landing} />
 
-      <Route path="/sign-in">
-        <div className="min-h-screen flex items-center justify-center bg-background p-4">
-          <SignIn routing="path" path="/sign-in" fallbackRedirectUrl="/dashboard" />
-        </div>
-      </Route>
-      <Route path="/sign-in/:rest*">
-        <div className="min-h-screen flex items-center justify-center bg-background p-4">
-          <SignIn routing="path" path="/sign-in" fallbackRedirectUrl="/dashboard" />
-        </div>
-      </Route>
+        <Route path="/sign-in">
+          <div className="min-h-screen flex items-center justify-center bg-background p-4">
+            <SignIn routing="path" path="/sign-in" fallbackRedirectUrl="/dashboard" />
+          </div>
+        </Route>
+        <Route path="/sign-in/:rest*">
+          <div className="min-h-screen flex items-center justify-center bg-background p-4">
+            <SignIn routing="path" path="/sign-in" fallbackRedirectUrl="/dashboard" />
+          </div>
+        </Route>
 
-      <Route path="/sign-up">
-        <div className="min-h-screen flex items-center justify-center bg-background p-4">
-          <SignUp routing="path" path="/sign-up" fallbackRedirectUrl="/dashboard" />
-        </div>
-      </Route>
-      <Route path="/sign-up/:rest*">
-        <div className="min-h-screen flex items-center justify-center bg-background p-4">
-          <SignUp routing="path" path="/sign-up" fallbackRedirectUrl="/dashboard" />
-        </div>
-      </Route>
+        <Route path="/sign-up">
+          <div className="min-h-screen flex items-center justify-center bg-background p-4">
+            <SignUp routing="path" path="/sign-up" fallbackRedirectUrl="/dashboard" />
+          </div>
+        </Route>
+        <Route path="/sign-up/:rest*">
+          <div className="min-h-screen flex items-center justify-center bg-background p-4">
+            <SignUp routing="path" path="/sign-up" fallbackRedirectUrl="/dashboard" />
+          </div>
+        </Route>
 
-      <Route path="/profile-setup">
-        <ProfileSetupRoute />
-      </Route>
+        <Route path="/profile-setup">
+          <ProfileSetupRoute />
+        </Route>
 
-      <Route path="/dashboard">
-        <ProtectedRoute><Dashboard /></ProtectedRoute>
-      </Route>
+        <Route path="/dashboard">
+          <ProtectedRoute><Dashboard /></ProtectedRoute>
+        </Route>
 
-      <Route path="/jd/new">
-        <ProtectedRoute><JDNew /></ProtectedRoute>
-      </Route>
+        <Route path="/jd/new">
+          <ProtectedRoute><JDNew /></ProtectedRoute>
+        </Route>
 
-      <Route path="/interviews">
-        <ProtectedRoute><InterviewsList /></ProtectedRoute>
-      </Route>
+        <Route path="/interviews">
+          <ProtectedRoute><InterviewsList /></ProtectedRoute>
+        </Route>
 
-      <Route path="/interviews/:id/results">
-        <ProtectedRoute><InterviewResults /></ProtectedRoute>
-      </Route>
+        <Route path="/interviews/:id/results">
+          <ProtectedRoute><InterviewResults /></ProtectedRoute>
+        </Route>
 
-      <Route path="/interviews/:id">
-        <ProtectedRoute><InterviewSession /></ProtectedRoute>
-      </Route>
+        <Route path="/interviews/:id">
+          <ProtectedRoute><InterviewSession /></ProtectedRoute>
+        </Route>
 
-      <Route path="/admin">
-        <AdminRoute><AdminPanel /></AdminRoute>
-      </Route>
+        <Route path="/admin">
+          <AdminRoute><AdminPanel /></AdminRoute>
+        </Route>
 
-      <Route path="/facility">
-        <FacilityRoute><FacilityPanel /></FacilityRoute>
-      </Route>
+        <Route path="/facility">
+          <FacilityRoute><FacilityPanel /></FacilityRoute>
+        </Route>
 
-      <Route path="/facility/students">
-        <FacilityRoute><FacilityPanel initialTab="students" /></FacilityRoute>
-      </Route>
+        <Route path="/facility/students">
+          <FacilityRoute><FacilityPanel initialTab="students" /></FacilityRoute>
+        </Route>
 
-      <Route path="/settings">
-        <ProtectedRoute><Settings /></ProtectedRoute>
-      </Route>
+        <Route path="/settings">
+          <ProtectedRoute><Settings /></ProtectedRoute>
+        </Route>
 
-      <Route component={NotFound} />
-    </Switch>
+        <Route component={NotFound} />
+      </Switch>
+    </Suspense>
   );
 }
 

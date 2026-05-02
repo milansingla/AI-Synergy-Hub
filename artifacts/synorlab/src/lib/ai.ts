@@ -1,6 +1,5 @@
-import OpenAI from "openai";
-
-function getOpenAI() {
+async function getOpenAI() {
+  const { default: OpenAI } = await import("openai");
   return new OpenAI({
     apiKey: import.meta.env.VITE_OPENAI_API_KEY as string,
     dangerouslyAllowBrowser: true,
@@ -57,7 +56,7 @@ export interface JDContext {
 }
 
 export async function parseJD(jdText: string): Promise<ParsedJD> {
-  const openai = getOpenAI();
+  const openai = await getOpenAI();
   const response = await openai.chat.completions.create({
     model: "gpt-4o",
     max_completion_tokens: 1024,
@@ -92,7 +91,7 @@ Return only valid JSON, no markdown, no code blocks.`,
 }
 
 export async function generateQuestions(jd: JDContext): Promise<QuestionSet> {
-  const openai = getOpenAI();
+  const openai = await getOpenAI();
   const companyCtx = jd.company || "this company";
 
   const response = await openai.chat.completions.create({
@@ -192,7 +191,7 @@ export async function getNextQuestion(
     };
   }
 
-  const openai = getOpenAI();
+  const openai = await getOpenAI();
   const currentPhase = getPhaseLabel(answeredCount, questionSet);
   const companyCtx = jd.company ? `at ${jd.company}` : "";
   const companyName = jd.company || "our company";
@@ -267,7 +266,7 @@ export async function evaluateInterview(
   jd: JDContext,
   conversationHistory: Array<{ role: "ai" | "user"; content: string }>
 ): Promise<FullEvaluation> {
-  const openai = getOpenAI();
+  const openai = await getOpenAI();
   const qaText = conversationHistory
     .reduce((acc: Array<{ q: string; a: string }>, msg, i) => {
       if (msg.role === "ai" && conversationHistory[i + 1]?.role === "user") {
