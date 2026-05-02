@@ -1,25 +1,26 @@
 import { Link } from "wouter";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@clerk/react";
 import { useLocation } from "wouter";
 import { ArrowRight } from "lucide-react";
 
-const PHOTOS = [
-  "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&w=600&q=80",
-  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=600&q=80",
-  "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=600&q=80",
-  "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=600&q=80",
-];
-
 const MARQUEE = [
-  "AI-POWERED INTERVIEWS",
+  "AI-POWERED MOCK INTERVIEWS",
   "JOB-SPECIFIC QUESTIONS",
   "INSTANT SCORED FEEDBACK",
-  "CAMPUS-WIDE DEPLOYMENT",
-  "FACULTY DASHBOARDS",
-  "PROGRESS TRACKING",
-  "ZERO SETUP REQUIRED",
+  "PLACEMENT TRACKING",
+  "COHORT DASHBOARDS",
   "UNLIMITED PRACTICE",
+  "ZERO SETUP REQUIRED",
+  "ADAPTIVE FOLLOW-UPS",
+];
+
+const QUESTIONS = [
+  "Tell me about a time you led a team through a difficult challenge.",
+  "How do you prioritise tasks when everything feels urgent?",
+  "Walk me through a project where you had to learn quickly.",
+  "Describe a situation where you disagreed with your manager.",
+  "What makes you the right candidate for this role?",
 ];
 
 const SynorLogo = ({ size = 28 }: { size?: number }) => (
@@ -30,6 +31,312 @@ const SynorLogo = ({ size = 28 }: { size?: number }) => (
     <rect x="18" y="10" width="4" height="11" fill="white" opacity="0.6" />
   </svg>
 );
+
+function HeroAnimation() {
+  const [qIdx, setQIdx] = useState(0);
+  const [showTyping, setShowTyping] = useState(false);
+  const [showAnswer, setShowAnswer] = useState(false);
+
+  useEffect(() => {
+    const cycle = () => {
+      setShowAnswer(false);
+      setShowTyping(false);
+      setTimeout(() => {
+        setQIdx((i) => (i + 1) % QUESTIONS.length);
+        setShowTyping(true);
+      }, 600);
+      setTimeout(() => {
+        setShowTyping(false);
+        setShowAnswer(true);
+      }, 2400);
+    };
+    const id = setInterval(cycle, 6000);
+    setShowTyping(true);
+    setTimeout(() => { setShowTyping(false); setShowAnswer(true); }, 1800);
+    return () => clearInterval(id);
+  }, []);
+
+  return (
+    <div
+      style={{
+        position: "relative",
+        width: "100%",
+        height: "100%",
+        minHeight: "540px",
+        background: "linear-gradient(135deg, #F8F7F5 0%, #EEF0FA 100%)",
+        overflow: "hidden",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      {/* ── Geometric background decorations ── */}
+      <div className="lp-geo-sq lp-rot-slow" style={{
+        position: "absolute", width: "220px", height: "220px",
+        border: "2px solid rgba(38,57,166,0.12)", top: "-40px", right: "-40px",
+      }} />
+      <div className="lp-geo-sq lp-rot-slow-r" style={{
+        position: "absolute", width: "140px", height: "140px",
+        border: "2px solid rgba(237,108,0,0.18)", bottom: "30px", left: "20px",
+      }} />
+      <div className="lp-geo-sq" style={{
+        position: "absolute", width: "80px", height: "80px",
+        background: "rgba(237,108,0,0.08)", top: "60px", left: "40px",
+      }} />
+      <div className="lp-geo-sq lp-rot-slow" style={{
+        position: "absolute", width: "50px", height: "50px",
+        background: "#2639A6", opacity: 0.07, bottom: "80px", right: "60px",
+      }} />
+      {/* Dot grid */}
+      {Array.from({ length: 20 }).map((_, i) => (
+        <div key={i} style={{
+          position: "absolute",
+          width: "4px", height: "4px",
+          borderRadius: "50%",
+          background: "#2639A6",
+          opacity: 0.12,
+          left: `${(i % 5) * 22 + 8}%`,
+          top: `${Math.floor(i / 5) * 24 + 6}%`,
+        }} />
+      ))}
+      {/* Orange diagonal stripe */}
+      <div style={{
+        position: "absolute", bottom: 0, right: 0,
+        width: "180px", height: "4px",
+        background: "#ED6C00", opacity: 0.35,
+        transform: "rotate(-35deg) translateY(40px) translateX(30px)",
+      }} />
+      <div style={{
+        position: "absolute", bottom: "12px", right: 0,
+        width: "120px", height: "2px",
+        background: "#ED6C00", opacity: 0.2,
+        transform: "rotate(-35deg) translateY(40px) translateX(30px)",
+      }} />
+
+      {/* ── Main interview card ── */}
+      <div
+        className="lp-float"
+        style={{
+          background: "white",
+          borderRadius: "12px",
+          boxShadow: "0 20px 60px rgba(38,57,166,0.15), 0 4px 16px rgba(0,0,0,0.06)",
+          width: "min(380px, 88%)",
+          padding: "0",
+          overflow: "hidden",
+          zIndex: 10,
+          position: "relative",
+        }}
+      >
+        {/* Card header */}
+        <div style={{
+          background: "#2639A6",
+          padding: "14px 20px",
+          display: "flex",
+          alignItems: "center",
+          gap: "10px",
+        }}>
+          <div style={{
+            width: "34px", height: "34px",
+            borderRadius: "50%",
+            background: "#ED6C00",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontWeight: 900, fontSize: "0.7rem", color: "white",
+            letterSpacing: "0.04em",
+            flexShrink: 0,
+          }}>
+            AI
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ color: "white", fontWeight: 700, fontSize: "0.82rem" }}>
+              Synorlab Interviewer
+            </div>
+            <div style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.67rem", marginTop: "1px" }}>
+              Software Engineer — Google
+            </div>
+          </div>
+          <div style={{
+            background: "#ED6C00",
+            color: "white",
+            fontWeight: 800,
+            fontSize: "0.6rem",
+            letterSpacing: "0.1em",
+            padding: "3px 8px",
+            borderRadius: "100px",
+          }}>
+            LIVE
+          </div>
+        </div>
+
+        {/* Chat area */}
+        <div style={{ padding: "20px", minHeight: "180px", display: "flex", flexDirection: "column", gap: "12px" }}>
+          {/* AI message */}
+          <div style={{ display: "flex", gap: "8px", alignItems: "flex-start" }}>
+            <div style={{
+              width: "24px", height: "24px",
+              borderRadius: "50%",
+              background: "#2639A6",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontWeight: 900, fontSize: "0.55rem", color: "white",
+              flexShrink: 0, marginTop: "2px",
+            }}>AI</div>
+            <div style={{
+              background: "#F0F2FC",
+              borderRadius: "0 10px 10px 10px",
+              padding: "10px 14px",
+              fontSize: "0.82rem",
+              lineHeight: 1.5,
+              color: "#1A1A1A",
+              maxWidth: "86%",
+              transition: "opacity 0.4s",
+            }}>
+              {QUESTIONS[qIdx]}
+            </div>
+          </div>
+
+          {/* Student typing / answer */}
+          {showTyping && (
+            <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
+              <div style={{
+                background: "#FFF3E8",
+                border: "1px solid rgba(237,108,0,0.2)",
+                borderRadius: "10px 0 10px 10px",
+                padding: "10px 16px",
+                display: "flex", alignItems: "center", gap: "4px",
+              }}>
+                <span className="lp-dot" style={{ animationDelay: "0ms" }} />
+                <span className="lp-dot" style={{ animationDelay: "160ms" }} />
+                <span className="lp-dot" style={{ animationDelay: "320ms" }} />
+              </div>
+            </div>
+          )}
+          {showAnswer && (
+            <div
+              className="lp-fade-up"
+              style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}
+            >
+              <div style={{
+                background: "#FFF3E8",
+                border: "1px solid rgba(237,108,0,0.2)",
+                borderRadius: "10px 0 10px 10px",
+                padding: "10px 14px",
+                fontSize: "0.78rem",
+                lineHeight: 1.5,
+                color: "#333",
+                maxWidth: "86%",
+              }}>
+                In my last internship, I identified a bottleneck in our onboarding flow and worked cross-functionally to reduce drop-off by 40%...
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Input bar */}
+        <div style={{
+          borderTop: "1px solid #F0F0F0",
+          padding: "12px 16px",
+          display: "flex",
+          alignItems: "center",
+          gap: "10px",
+          background: "#FAFAFA",
+        }}>
+          <div style={{
+            flex: 1,
+            height: "34px",
+            borderRadius: "6px",
+            background: "white",
+            border: "1px solid #E8E8E8",
+            display: "flex", alignItems: "center",
+            paddingLeft: "12px",
+            fontSize: "0.75rem",
+            color: "#AAA",
+          }}>
+            Type your answer…
+            <span className="lp-cursor" />
+          </div>
+          <div style={{
+            width: "34px", height: "34px",
+            background: "#ED6C00",
+            borderRadius: "6px",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            flexShrink: 0,
+          }}>
+            <ArrowRight size={14} color="white" />
+          </div>
+        </div>
+      </div>
+
+      {/* ── Floating badge: Score ── */}
+      <div
+        className="lp-float-r"
+        style={{
+          position: "absolute",
+          top: "18%",
+          right: "6%",
+          background: "#ED6C00",
+          borderRadius: "10px",
+          padding: "10px 14px",
+          boxShadow: "0 8px 24px rgba(237,108,0,0.3)",
+          zIndex: 12,
+        }}
+      >
+        <div style={{ color: "white", fontWeight: 900, fontSize: "1.2rem", lineHeight: 1 }}>92<span style={{ fontSize: "0.7rem" }}>/100</span></div>
+        <div style={{ color: "rgba(255,255,255,0.8)", fontSize: "0.6rem", fontWeight: 700, letterSpacing: "0.1em", marginTop: "3px" }}>YOUR SCORE</div>
+      </div>
+
+      {/* ── Floating badge: Placement ready ── */}
+      <div
+        className="lp-float"
+        style={{
+          position: "absolute",
+          bottom: "16%",
+          right: "5%",
+          background: "white",
+          borderRadius: "10px",
+          padding: "10px 14px",
+          boxShadow: "0 8px 24px rgba(0,0,0,0.1)",
+          border: "1px solid #EBEBEB",
+          zIndex: 12,
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+          animationDelay: "1s",
+        }}
+      >
+        <div style={{
+          width: "28px", height: "28px",
+          borderRadius: "50%",
+          background: "#2639A6",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: "0.75rem",
+          flexShrink: 0,
+        }}>✓</div>
+        <div>
+          <div style={{ color: "#2639A6", fontWeight: 800, fontSize: "0.75rem" }}>Placement Ready</div>
+          <div style={{ color: "#AAA", fontSize: "0.62rem", marginTop: "1px" }}>Assessment complete</div>
+        </div>
+      </div>
+
+      {/* ── Floating badge: Sessions ── */}
+      <div
+        className="lp-float-r"
+        style={{
+          position: "absolute",
+          bottom: "18%",
+          left: "5%",
+          background: "#2639A6",
+          borderRadius: "10px",
+          padding: "10px 14px",
+          boxShadow: "0 8px 24px rgba(38,57,166,0.25)",
+          zIndex: 12,
+          animationDelay: "0.5s",
+        }}
+      >
+        <div style={{ color: "#ED6C00", fontWeight: 900, fontSize: "1.1rem", lineHeight: 1 }}>2,000+</div>
+        <div style={{ color: "rgba(255,255,255,0.7)", fontSize: "0.6rem", fontWeight: 700, letterSpacing: "0.1em", marginTop: "3px" }}>STUDENTS TRAINED</div>
+      </div>
+    </div>
+  );
+}
 
 export default function Landing() {
   const { isSignedIn, isLoaded } = useAuth();
@@ -49,86 +356,90 @@ export default function Landing() {
       {/* ── Fonts & animations ─────────────────────────────────────── */}
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Alexandria:wght@300;400;600;700;800;900&display=swap');
-        @keyframes lp-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-        .lp-marquee { animation: lp-marquee 26s linear infinite; display: flex; width: max-content; }
-        .lp-marquee:hover { animation-play-state: paused; }
-        .lp-photo { overflow: hidden; position: relative; }
-        .lp-photo img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.65s ease; }
-        .lp-photo:hover img { transform: scale(1.05); }
-        .lp-ol { position: absolute; inset: 0; pointer-events: none; }
+
+        @keyframes lp-marquee { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+        .lp-marquee { animation: lp-marquee 28s linear infinite; display:flex; width:max-content; }
+        .lp-marquee:hover { animation-play-state:paused; }
+
+        @keyframes lp-float {
+          0%,100%{ transform:translateY(0px); }
+          50%{ transform:translateY(-12px); }
+        }
+        .lp-float { animation: lp-float 4.5s ease-in-out infinite; }
+
+        @keyframes lp-float-r {
+          0%,100%{ transform:translateY(0px); }
+          50%{ transform:translateY(10px); }
+        }
+        .lp-float-r { animation: lp-float-r 5s ease-in-out infinite; }
+
+        @keyframes lp-rot {
+          from{ transform:rotate(0deg); }
+          to{ transform:rotate(360deg); }
+        }
+        .lp-rot-slow { animation: lp-rot 18s linear infinite; transform-origin:center; }
+        .lp-rot-slow-r { animation: lp-rot 22s linear infinite reverse; transform-origin:center; }
+
+        @keyframes lp-dot-bounce {
+          0%,80%,100%{ transform:scale(0.7); opacity:0.4; }
+          40%{ transform:scale(1); opacity:1; }
+        }
+        .lp-dot {
+          display:inline-block;
+          width:7px; height:7px;
+          border-radius:50%;
+          background:#ED6C00;
+          animation: lp-dot-bounce 1.2s ease-in-out infinite;
+        }
+
+        @keyframes lp-blink { 0%,100%{opacity:1} 50%{opacity:0} }
+        .lp-cursor {
+          display:inline-block;
+          width:2px; height:12px;
+          background:#ED6C00;
+          margin-left:4px;
+          vertical-align:middle;
+          animation: lp-blink 1s step-end infinite;
+        }
+
+        @keyframes lp-fade-up {
+          from{ opacity:0; transform:translateY(8px); }
+          to{ opacity:1; transform:translateY(0); }
+        }
+        .lp-fade-up { animation: lp-fade-up 0.4s ease forwards; }
+
+        .lp-photo { overflow:hidden; position:relative; }
+        .lp-photo img { width:100%; height:100%; object-fit:cover; display:block; transition:transform 0.65s ease; }
+        .lp-photo:hover img { transform:scale(1.05); }
+        .lp-ol { position:absolute; inset:0; pointer-events:none; }
+        .lp-geo-sq { position:absolute; }
       `}</style>
 
       {/* ── NAV ──────────────────────────────────────────────────────── */}
-      <nav
-        className="bg-white sticky top-0 z-50"
-        style={{ borderBottom: "1px solid #EBEBEB" }}
-      >
-        <div
-          className="max-w-screen-xl mx-auto flex items-center justify-between px-8"
-          style={{ height: "64px" }}
-        >
+      <nav className="bg-white sticky top-0 z-50" style={{ borderBottom: "1px solid #EBEBEB" }}>
+        <div className="max-w-screen-xl mx-auto flex items-center justify-between px-8" style={{ height: "64px" }}>
           <div className="flex items-center gap-2">
             <SynorLogo size={26} />
-            <span
-              style={{
-                color: "#2639A6",
-                fontWeight: 800,
-                fontSize: "0.95rem",
-                letterSpacing: "0.06em",
-              }}
-            >
+            <span style={{ color: "#2639A6", fontWeight: 800, fontSize: "0.95rem", letterSpacing: "0.06em" }}>
               SYNORLAB
             </span>
           </div>
 
           <div className="hidden md:flex items-center gap-8">
-            {[
-              ["#features", "FEATURES"],
-              ["#how", "HOW IT WORKS"],
-            ].map(([href, label]) => (
-              <a
-                key={href}
-                href={href}
-                style={{
-                  color: "#555",
-                  fontSize: "0.75rem",
-                  fontWeight: 700,
-                  textDecoration: "none",
-                  letterSpacing: "0.1em",
-                }}
-              >
+            {[["#features", "FEATURES"], ["#how", "HOW IT WORKS"]].map(([href, label]) => (
+              <a key={href} href={href} style={{ color: "#555", fontSize: "0.75rem", fontWeight: 700, textDecoration: "none", letterSpacing: "0.1em" }}>
                 {label}
               </a>
             ))}
             <Link href="/sign-in">
-              <span
-                style={{
-                  color: "#2639A6",
-                  fontSize: "0.75rem",
-                  fontWeight: 700,
-                  letterSpacing: "0.1em",
-                  cursor: "pointer",
-                }}
-              >
+              <span style={{ color: "#2639A6", fontSize: "0.75rem", fontWeight: 700, letterSpacing: "0.1em", cursor: "pointer" }}>
                 SIGN IN
               </span>
             </Link>
           </div>
 
           <Link href="/sign-up">
-            <button
-              style={{
-                background: "#ED6C00",
-                color: "white",
-                fontWeight: 800,
-                fontSize: "0.72rem",
-                letterSpacing: "0.12em",
-                padding: "0.6rem 1.4rem",
-                border: "none",
-                borderRadius: 0,
-                cursor: "pointer",
-              }}
-            >
+            <button style={{ background: "#ED6C00", color: "white", fontWeight: 800, fontSize: "0.72rem", letterSpacing: "0.12em", padding: "0.6rem 1.4rem", border: "none", borderRadius: 0, cursor: "pointer" }}>
               BOOK DEMO ↗
             </button>
           </Link>
@@ -136,330 +447,85 @@ export default function Landing() {
       </nav>
 
       {/* ── HERO ─────────────────────────────────────────────────────── */}
-      <section
-        className="bg-white"
-        style={{ minHeight: "calc(100vh - 64px)", display: "flex" }}
-      >
-        <div
-          className="max-w-screen-xl mx-auto w-full flex flex-col lg:flex-row"
-          style={{ minHeight: "calc(100vh - 64px)" }}
-        >
+      <section className="bg-white" style={{ minHeight: "calc(100vh - 64px)", display: "flex" }}>
+        <div className="max-w-screen-xl mx-auto w-full flex flex-col lg:flex-row" style={{ minHeight: "calc(100vh - 64px)" }}>
+
           {/* Left — copy */}
           <div className="flex-1 flex flex-col justify-center px-8 lg:px-16 py-16">
             {/* Eyebrow */}
-            <div
-              style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "2rem" }}
-            >
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "2rem" }}>
               <div style={{ width: "36px", height: "2px", background: "#ED6C00", flexShrink: 0 }} />
-              <span
-                style={{
-                  color: "#ED6C00",
-                  fontWeight: 700,
-                  fontSize: "0.65rem",
-                  letterSpacing: "0.2em",
-                }}
-              >
-                FOR HR & UNIVERSITY TALENT TEAMS
+              <span style={{ color: "#ED6C00", fontWeight: 700, fontSize: "0.65rem", letterSpacing: "0.2em" }}>
+                FOR PLACEMENT DEPARTMENTS
               </span>
             </div>
 
             {/* Headline */}
-            <h1
-              style={{
-                fontWeight: 900,
-                lineHeight: 0.9,
-                letterSpacing: "-0.04em",
-                marginBottom: "2rem",
-              }}
-            >
-              <span
-                style={{
-                  display: "block",
-                  fontSize: "clamp(3.25rem,8.5vw,8.5rem)",
-                  color: "#0D0D0D",
-                }}
-              >
-                HIRE
-              </span>
-              <span
-                style={{
-                  display: "block",
-                  fontSize: "clamp(3.25rem,8.5vw,8.5rem)",
-                  color: "#ED6C00",
-                }}
-              >
-                INTERVIEW-
-              </span>
-              <span
-                style={{
-                  display: "block",
-                  fontSize: "clamp(3.25rem,8.5vw,8.5rem)",
-                  color: "#2639A6",
-                }}
-              >
-                READY
-              </span>
-              <span
-                style={{
-                  display: "block",
-                  fontSize: "clamp(3.25rem,8.5vw,8.5rem)",
-                  color: "#0D0D0D",
-                }}
-              >
-                GRADUATES.
-              </span>
+            <h1 style={{ fontWeight: 900, lineHeight: 0.9, letterSpacing: "-0.04em", marginBottom: "2rem" }}>
+              <span style={{ display: "block", fontSize: "clamp(3rem,8vw,8rem)", color: "#0D0D0D" }}>PLACE</span>
+              <span style={{ display: "block", fontSize: "clamp(3rem,8vw,8rem)", color: "#ED6C00" }}>MORE</span>
+              <span style={{ display: "block", fontSize: "clamp(3rem,8vw,8rem)", color: "#2639A6" }}>STUDENTS.</span>
+              <span style={{ display: "block", fontSize: "clamp(3rem,8vw,8rem)", color: "#0D0D0D" }}>FASTER.</span>
             </h1>
 
             {/* Sub */}
-            <p
-              style={{
-                color: "#555",
-                fontSize: "clamp(0.9rem,1.4vw,1.05rem)",
-                lineHeight: 1.75,
-                maxWidth: "430px",
-                marginBottom: "2.25rem",
-              }}
-            >
-              Deploy AI-powered mock interviews across your entire student cohort
-              — instant feedback, data-driven progress tracking, zero extra
-              headcount.
+            <p style={{ color: "#555", fontSize: "clamp(0.9rem,1.4vw,1.05rem)", lineHeight: 1.75, maxWidth: "430px", marginBottom: "2.25rem" }}>
+              Give every student unlimited AI-powered mock interview practice —
+              tailored to their target role, scored instantly, with data your
+              placement team can actually act on.
             </p>
 
             {/* CTAs */}
             <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
               <Link href="/sign-up">
-                <button
-                  style={{
-                    background: "#ED6C00",
-                    color: "white",
-                    fontWeight: 800,
-                    fontSize: "0.78rem",
-                    letterSpacing: "0.1em",
-                    padding: "0.85rem 2rem",
-                    border: "none",
-                    borderRadius: 0,
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                  }}
-                >
+                <button style={{ background: "#ED6C00", color: "white", fontWeight: 800, fontSize: "0.78rem", letterSpacing: "0.1em", padding: "0.85rem 2rem", border: "none", borderRadius: 0, cursor: "pointer", display: "flex", alignItems: "center", gap: "8px" }}>
                   START FREE TRIAL <ArrowRight size={13} />
                 </button>
               </Link>
               <Link href="/sign-in">
-                <button
-                  style={{
-                    background: "transparent",
-                    color: "#2639A6",
-                    fontWeight: 800,
-                    fontSize: "0.78rem",
-                    letterSpacing: "0.1em",
-                    padding: "0.85rem 2rem",
-                    border: "2px solid #2639A6",
-                    borderRadius: "100px",
-                    cursor: "pointer",
-                  }}
-                >
+                <button style={{ background: "transparent", color: "#2639A6", fontWeight: 800, fontSize: "0.78rem", letterSpacing: "0.1em", padding: "0.85rem 2rem", border: "2px solid #2639A6", borderRadius: "100px", cursor: "pointer" }}>
                   SIGN IN
                 </button>
               </Link>
             </div>
 
-            {/* Social proof */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "14px",
-                marginTop: "2.5rem",
-              }}
-            >
+            {/* Social proof — initials avatars, no photos */}
+            <div style={{ display: "flex", alignItems: "center", gap: "14px", marginTop: "2.5rem" }}>
               <div style={{ display: "flex" }}>
-                {PHOTOS.slice(0, 4).map((src, i) => (
-                  <div
-                    key={i}
-                    style={{
-                      width: "34px",
-                      height: "34px",
-                      borderRadius: "50%",
-                      border: "2.5px solid white",
-                      overflow: "hidden",
-                      marginLeft: i > 0 ? "-10px" : 0,
-                      zIndex: 4 - i,
-                      boxShadow: "0 0 0 1px rgba(0,0,0,0.08)",
-                    }}
-                  >
-                    <img
-                      src={src}
-                      alt=""
-                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                    />
+                {[
+                  { initials: "AS", bg: "#ED6C00" },
+                  { initials: "PK", bg: "#2639A6" },
+                  { initials: "RJ", bg: "#4B5563" },
+                  { initials: "MN", bg: "#059669" },
+                ].map(({ initials, bg }, i) => (
+                  <div key={i} style={{ width: "34px", height: "34px", borderRadius: "50%", border: "2.5px solid white", background: bg, display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontWeight: 700, fontSize: "0.6rem", letterSpacing: "0.02em", marginLeft: i > 0 ? "-10px" : 0, zIndex: 4 - i, boxShadow: "0 0 0 1px rgba(0,0,0,0.08)" }}>
+                    {initials}
                   </div>
                 ))}
               </div>
               <div>
-                <div
-                  style={{ color: "#ED6C00", fontWeight: 900, fontSize: "0.8rem" }}
-                >
-                  ★★★★★
-                </div>
-                <div
-                  style={{
-                    color: "#888",
-                    fontSize: "0.65rem",
-                    fontWeight: 700,
-                    letterSpacing: "0.08em",
-                    marginTop: "2px",
-                  }}
-                >
-                  TRUSTED BY 200+ UNIVERSITIES
+                <div style={{ color: "#ED6C00", fontWeight: 900, fontSize: "0.8rem" }}>★★★★★</div>
+                <div style={{ color: "#888", fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.08em", marginTop: "2px" }}>
+                  USED BY 200+ PLACEMENT TEAMS
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Right — photo grid */}
-          <div
-            className="hidden lg:grid"
-            style={{
-              width: "45%",
-              gridTemplateColumns: "1fr 1fr",
-              gridTemplateRows: "1fr 1fr",
-              gap: "4px",
-              padding: "4px 4px 4px 0",
-              minHeight: "calc(100vh - 64px)",
-            }}
-          >
-            {/* Photo A – orange overlay */}
-            <div className="lp-photo">
-              <img src={PHOTOS[0]} alt="Student 1" />
-              <div
-                className="lp-ol"
-                style={{ background: "#ED6C00", mixBlendMode: "multiply", opacity: 0.5 }}
-              />
-              <div
-                style={{
-                  position: "absolute",
-                  bottom: "16px",
-                  left: "16px",
-                  color: "white",
-                  fontWeight: 900,
-                  fontSize: "0.7rem",
-                  letterSpacing: "0.15em",
-                }}
-              >
-                CONFIDENT.
-              </div>
-            </div>
-
-            {/* Photo B – gradient */}
-            <div className="lp-photo">
-              <img src={PHOTOS[1]} alt="Student 2" />
-              <div
-                className="lp-ol"
-                style={{
-                  background:
-                    "linear-gradient(to top, rgba(38,57,166,0.55) 0%, transparent 55%)",
-                }}
-              />
-            </div>
-
-            {/* Photo C – subtle dark */}
-            <div className="lp-photo">
-              <img src={PHOTOS[2]} alt="Student 3" />
-              <div
-                className="lp-ol"
-                style={{
-                  background:
-                    "linear-gradient(to top, rgba(13,13,13,0.4) 0%, transparent 60%)",
-                }}
-              />
-            </div>
-
-            {/* Photo D – navy card with big stat */}
-            <div
-              className="lp-photo"
-              style={{ background: "#2639A6" }}
-            >
-              <img
-                src={PHOTOS[3]}
-                alt="Student 4"
-                style={{ opacity: 0.25, position: "absolute", inset: 0 }}
-              />
-              <div
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "6px",
-                  zIndex: 2,
-                }}
-              >
-                <div
-                  style={{
-                    color: "#ED6C00",
-                    fontWeight: 900,
-                    fontSize: "clamp(2.75rem,5vw,5rem)",
-                    letterSpacing: "-0.05em",
-                    lineHeight: 1,
-                  }}
-                >
-                  94%
-                </div>
-                <div
-                  style={{
-                    color: "white",
-                    fontWeight: 700,
-                    fontSize: "0.65rem",
-                    letterSpacing: "0.14em",
-                    textAlign: "center",
-                    padding: "0 12px",
-                  }}
-                >
-                  STUDENT SATISFACTION
-                </div>
-              </div>
-            </div>
+          {/* Right — animated hero panel */}
+          <div className="hidden lg:flex" style={{ width: "48%", minHeight: "calc(100vh - 64px)" }}>
+            <HeroAnimation />
           </div>
         </div>
       </section>
 
       {/* ── MARQUEE ──────────────────────────────────────────────────── */}
-      <div
-        style={{
-          background: "#ED6C00",
-          overflow: "hidden",
-          padding: "13px 0",
-          borderTop: "3px solid #c45c00",
-          borderBottom: "3px solid #c45c00",
-        }}
-      >
+      <div style={{ background: "#ED6C00", overflow: "hidden", padding: "13px 0", borderTop: "3px solid #c45c00", borderBottom: "3px solid #c45c00" }}>
         <div className="lp-marquee">
           {doubled.map((item, i) => (
-            <span
-              key={i}
-              style={{
-                color: "white",
-                fontWeight: 800,
-                fontSize: "0.72rem",
-                letterSpacing: "0.18em",
-                whiteSpace: "nowrap",
-                paddingRight: "40px",
-              }}
-            >
+            <span key={i} style={{ color: "white", fontWeight: 800, fontSize: "0.72rem", letterSpacing: "0.18em", whiteSpace: "nowrap", paddingRight: "40px" }}>
               {item}
-              <span
-                style={{
-                  color: "rgba(255,255,255,0.35)",
-                  marginLeft: "40px",
-                }}
-              >
-                ◆
-              </span>
+              <span style={{ color: "rgba(255,255,255,0.35)", marginLeft: "40px" }}>◆</span>
             </span>
           ))}
         </div>
@@ -469,50 +535,14 @@ export default function Landing() {
       <section style={{ background: "#2639A6" }}>
         <div className="max-w-screen-xl mx-auto px-8 py-16 grid grid-cols-1 md:grid-cols-3">
           {[
-            { val: "2,000+", label: "Students Onboarded", sub: "Across partner universities" },
+            { val: "2,000+", label: "Students Trained", sub: "Across partner institutions" },
             { val: "94%", label: "Satisfaction Rate", sub: "From post-session surveys" },
-            { val: "8 min", label: "Average Session", sub: "Concise, focused practice" },
+            { val: "3×", label: "More Practice Sessions", sub: "Than traditional coaching" },
           ].map(({ val, label, sub }, i) => (
-            <div
-              key={i}
-              style={{
-                padding: "2rem 3rem",
-                borderLeft: i > 0 ? "1px solid rgba(255,255,255,0.12)" : "none",
-                textAlign: "center",
-              }}
-            >
-              <div
-                style={{
-                  color: "#ED6C00",
-                  fontWeight: 900,
-                  fontSize: "clamp(2.75rem,6vw,5.5rem)",
-                  lineHeight: 1,
-                  letterSpacing: "-0.04em",
-                }}
-              >
-                {val}
-              </div>
-              <div
-                style={{
-                  color: "white",
-                  fontWeight: 700,
-                  fontSize: "0.95rem",
-                  letterSpacing: "0.02em",
-                  marginTop: "8px",
-                }}
-              >
-                {label}
-              </div>
-              <div
-                style={{
-                  color: "rgba(255,255,255,0.45)",
-                  fontWeight: 500,
-                  fontSize: "0.72rem",
-                  marginTop: "4px",
-                }}
-              >
-                {sub}
-              </div>
+            <div key={i} style={{ padding: "2rem 3rem", borderLeft: i > 0 ? "1px solid rgba(255,255,255,0.12)" : "none", textAlign: "center" }}>
+              <div style={{ color: "#ED6C00", fontWeight: 900, fontSize: "clamp(2.75rem,6vw,5.5rem)", lineHeight: 1, letterSpacing: "-0.04em" }}>{val}</div>
+              <div style={{ color: "white", fontWeight: 700, fontSize: "0.95rem", letterSpacing: "0.02em", marginTop: "8px" }}>{label}</div>
+              <div style={{ color: "rgba(255,255,255,0.45)", fontWeight: 500, fontSize: "0.72rem", marginTop: "4px" }}>{sub}</div>
             </div>
           ))}
         </div>
@@ -520,267 +550,113 @@ export default function Landing() {
 
       {/* ── FEATURES ─────────────────────────────────────────────────── */}
       <section id="features">
-        {/* Feature 1 – white, photo left */}
-        <div
-          style={{ background: "white", minHeight: "520px" }}
-          className="hidden md:grid"
-        >
+        {/* Feature 1 – white */}
+        <div style={{ background: "white", minHeight: "520px" }} className="hidden md:grid">
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", minHeight: "520px" }}>
             <div className="lp-photo">
-              <img
-                src="https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=900&q=80"
-                alt="Students learning"
-              />
-              <div
-                className="lp-ol"
-                style={{
-                  background:
-                    "linear-gradient(135deg, rgba(237,108,0,0.35) 0%, transparent 55%)",
-                }}
-              />
+              <img src="https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=900&q=80" alt="Students training" />
+              <div className="lp-ol" style={{ background: "linear-gradient(135deg, rgba(237,108,0,0.35) 0%, transparent 55%)" }} />
             </div>
-            <div
-              style={{
-                padding: "4rem 5rem",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "center",
-              }}
-            >
-              <FeatureTag n="01" label="JD PARSING" />
+            <div style={{ padding: "4rem 5rem", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+              <FeatureTag n="01" label="ROLE-SPECIFIC TRAINING" />
               <h2 style={featureH2Dark}>
-                Any role.<br />Any company.<br />
-                <span style={{ color: "#2639A6" }}>Instant questions.</span>
+                Match practice to<br />every job.<br />
+                <span style={{ color: "#2639A6" }}>Automatically.</span>
               </h2>
               <p style={featureBodyDark}>
-                Paste any job description and our AI extracts the role, required
-                skills, and seniority level — then generates hyper-relevant mock
-                interview questions in seconds. No configuration. No templates.
+                Students paste any job description from any company — our AI reads the role, required skills, and experience level, then builds a custom interview in seconds. No placement officer needed.
               </p>
-              <FeatureList
-                dark
-                items={[
-                  "Supports any industry or function",
-                  "Extracts skills, responsibilities & level",
-                  "Unique questions every session",
-                ]}
-              />
+              <FeatureList dark items={["Works for any industry or function", "Extracts skills, responsibilities & level", "New unique questions every session"]} />
             </div>
           </div>
         </div>
-        {/* Mobile F1 */}
-        <MobileFeature n="01" label="JD PARSING" dark>
-          <h2 style={{ ...featureH2Dark, fontSize: "2rem" }}>
-            Any role.<br />
-            <span style={{ color: "#2639A6" }}>Instant questions.</span>
-          </h2>
-          <p style={featureBodyDark}>
-            Paste any job description. AI generates hyper-relevant questions instantly.
-          </p>
+        <MobileFeature n="01" label="ROLE-SPECIFIC TRAINING" dark>
+          <h2 style={{ ...featureH2Dark, fontSize: "2rem" }}>Match practice to<br /><span style={{ color: "#2639A6" }}>every job.</span></h2>
+          <p style={featureBodyDark}>Paste any JD. AI builds a custom mock interview in seconds.</p>
         </MobileFeature>
 
-        {/* Feature 2 – navy, text left */}
-        <div
-          style={{ background: "#2639A6", minHeight: "520px" }}
-          className="hidden md:grid"
-        >
+        {/* Feature 2 – navy */}
+        <div style={{ background: "#2639A6", minHeight: "520px" }} className="hidden md:grid">
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", minHeight: "520px" }}>
-            <div
-              style={{
-                padding: "4rem 5rem",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "center",
-              }}
-            >
+            <div style={{ padding: "4rem 5rem", display: "flex", flexDirection: "column", justifyContent: "center" }}>
               <FeatureTag n="02" label="AI INTERVIEW ENGINE" />
               <h2 style={featureH2Light}>
-                Conversational.<br />Adaptive.<br />
-                <span style={{ color: "#ED6C00" }}>Relentless.</span>
+                Realistic.<br />Adaptive.<br />
+                <span style={{ color: "#ED6C00" }}>Challenging.</span>
               </h2>
               <p style={featureBodyLight}>
-                Students engage in full mock interviews that adapt to their
-                answers in real time — follow-up questions, pressure tests, and
-                clarifications, all handled automatically. No two sessions are
-                the same.
+                The AI conducts a full interview, asking follow-up questions and pressure-testing answers in real time — just like a real recruiter. Every student gets a genuinely challenging session.
               </p>
-              <FeatureList
-                items={[
-                  "Unlimited practice sessions",
-                  "Real-time adaptive follow-ups",
-                  "Covers behavioural & technical rounds",
-                ]}
-              />
+              <FeatureList items={["Unlimited practice, any time", "Adaptive follow-up questions", "Covers behavioural & technical rounds"]} />
             </div>
             <div className="lp-photo">
-              <img
-                src="https://images.unsplash.com/photo-1543269865-cbf427effbad?auto=format&fit=crop&w=900&q=80"
-                alt="Student at laptop"
-              />
-              <div
-                className="lp-ol"
-                style={{
-                  background:
-                    "linear-gradient(135deg, rgba(38,57,166,0.5) 0%, transparent 55%)",
-                }}
-              />
+              <img src="https://images.unsplash.com/photo-1543269865-cbf427effbad?auto=format&fit=crop&w=900&q=80" alt="Student practising" />
+              <div className="lp-ol" style={{ background: "linear-gradient(135deg, rgba(38,57,166,0.5) 0%, transparent 55%)" }} />
             </div>
           </div>
         </div>
-        {/* Mobile F2 */}
         <MobileFeature n="02" label="AI INTERVIEW ENGINE" light>
-          <h2 style={{ ...featureH2Light, fontSize: "2rem" }}>
-            Conversational.<br />
-            <span style={{ color: "#ED6C00" }}>Adaptive.</span>
-          </h2>
-          <p style={featureBodyLight}>
-            Realistic AI mock interviews that adapt in real time. No two sessions
-            are ever the same.
-          </p>
+          <h2 style={{ ...featureH2Light, fontSize: "2rem" }}>Realistic.<br /><span style={{ color: "#ED6C00" }}>Challenging.</span></h2>
+          <p style={featureBodyLight}>Full AI mock interviews that adapt in real time. Every session is genuinely challenging.</p>
         </MobileFeature>
 
-        {/* Feature 3 – light, photo left */}
-        <div
-          style={{ background: "#F5F4F2", minHeight: "520px" }}
-          className="hidden md:grid"
-        >
+        {/* Feature 3 – light */}
+        <div style={{ background: "#F5F4F2", minHeight: "520px" }} className="hidden md:grid">
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", minHeight: "520px" }}>
             <div className="lp-photo">
-              <img
-                src="https://images.unsplash.com/photo-1551836022-deb4988cc6c0?auto=format&fit=crop&w=900&q=80"
-                alt="Professional woman"
-              />
-              <div
-                className="lp-ol"
-                style={{
-                  background:
-                    "linear-gradient(135deg, rgba(237,108,0,0.25) 0%, transparent 65%)",
-                }}
-              />
+              <img src="https://images.unsplash.com/photo-1551836022-deb4988cc6c0?auto=format&fit=crop&w=900&q=80" alt="Placement results" />
+              <div className="lp-ol" style={{ background: "linear-gradient(135deg, rgba(237,108,0,0.25) 0%, transparent 65%)" }} />
             </div>
-            <div
-              style={{
-                padding: "4rem 5rem",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "center",
-              }}
-            >
-              <FeatureTag n="03" label="SCORED EVALUATIONS" />
+            <div style={{ padding: "4rem 5rem", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+              <FeatureTag n="03" label="PLACEMENT ANALYTICS" />
               <h2 style={featureH2Dark}>
-                Data-driven<br />feedback.<br />
-                <span style={{ color: "#ED6C00" }}>Every time.</span>
+                Know who's ready<br />before<br />
+                <span style={{ color: "#ED6C00" }}>placements open.</span>
               </h2>
               <p style={featureBodyDark}>
-                After every session students receive an honest AI evaluation —
-                strengths, specific improvements, score breakdown, and a hiring
-                verdict. Faculty get aggregated dashboards to monitor cohort
-                readiness.
+                Your placement dashboard shows every student's readiness score, session history, and improvement trend — so you can coach those who need it most, before it's too late.
               </p>
-              <FeatureList
-                dark
-                items={[
-                  "Per-answer scoring & detailed feedback",
-                  "Faculty cohort dashboards",
-                  "Exportable progress reports",
-                ]}
-              />
+              <FeatureList dark items={["Per-student readiness scores", "Cohort-wide placement dashboard", "Exportable progress reports"]} />
             </div>
           </div>
         </div>
-        {/* Mobile F3 */}
-        <MobileFeature n="03" label="SCORED EVALUATIONS" dark bg="#F5F4F2">
-          <h2 style={{ ...featureH2Dark, fontSize: "2rem" }}>
-            Data-driven<br />
-            <span style={{ color: "#ED6C00" }}>feedback.</span>
-          </h2>
-          <p style={featureBodyDark}>
-            Honest scored feedback for students. Cohort dashboards for faculty.
-          </p>
+        <MobileFeature n="03" label="PLACEMENT ANALYTICS" dark bg="#F5F4F2">
+          <h2 style={{ ...featureH2Dark, fontSize: "2rem" }}>Know who's ready<br /><span style={{ color: "#ED6C00" }}>early.</span></h2>
+          <p style={featureBodyDark}>Readiness scores and cohort dashboards so you can act before placements open.</p>
         </MobileFeature>
       </section>
 
       {/* ── HOW IT WORKS ─────────────────────────────────────────────── */}
-      <section
-        id="how"
-        style={{ background: "white", borderTop: "1px solid #EBEBEB" }}
-      >
+      <section id="how" style={{ background: "white", borderTop: "1px solid #EBEBEB" }}>
         <div className="max-w-screen-xl mx-auto px-8 py-20">
           <div style={{ marginBottom: "3.5rem" }}>
-            <div
-              style={{
-                color: "#ED6C00",
-                fontWeight: 700,
-                fontSize: "0.65rem",
-                letterSpacing: "0.2em",
-                marginBottom: "1rem",
-              }}
-            >
-              THE PROCESS
-            </div>
-            <h2
-              style={{
-                fontWeight: 900,
-                fontSize: "clamp(2rem,4.5vw,3.75rem)",
-                color: "#0D0D0D",
-                letterSpacing: "-0.04em",
-                lineHeight: 1.05,
-              }}
-            >
-              Live in{" "}
-              <span style={{ color: "#2639A6" }}>3 steps.</span>
+            <div style={{ color: "#ED6C00", fontWeight: 700, fontSize: "0.65rem", letterSpacing: "0.2em", marginBottom: "1rem" }}>THE PROCESS</div>
+            <h2 style={{ fontWeight: 900, fontSize: "clamp(2rem,4.5vw,3.75rem)", color: "#0D0D0D", letterSpacing: "-0.04em", lineHeight: 1.05 }}>
+              Live in <span style={{ color: "#2639A6" }}>3 steps.</span>
             </h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
               {
                 n: "01",
-                title: "Onboard your cohort",
-                body: "Share an access code or bulk-invite via CSV. Students sign up, complete a quick profile, and they're ready to practise.",
+                title: "Onboard your students",
+                body: "Share an access code or bulk-invite via CSV. Students sign up, complete a quick profile, and can start practising immediately — no IT setup needed.",
               },
               {
                 n: "02",
-                title: "Students practise with AI",
-                body: "Upload any job description. The AI conducts a full mock interview, adapting questions to each answer in real time.",
+                title: "AI coaches each student",
+                body: "Students paste a job description from their target company. The AI runs a full personalised mock interview, adapting questions to every answer in real time.",
               },
               {
                 n: "03",
-                title: "Track & improve",
-                body: "Review per-student scores and cohort trends on your faculty dashboard. Identify who needs support before placement season.",
+                title: "You track & intervene",
+                body: "Your placement dashboard surfaces who's improving, who's struggling, and who's placement-ready — so you can focus your time where it matters most.",
               },
             ].map(({ n, title, body }) => (
-              <div
-                key={n}
-                style={{ borderTop: "3px solid #ED6C00", paddingTop: "1.5rem" }}
-              >
-                <div
-                  style={{
-                    fontWeight: 900,
-                    fontSize: "3.5rem",
-                    color: "#EBEBEB",
-                    lineHeight: 1,
-                    letterSpacing: "-0.05em",
-                    marginBottom: "0.75rem",
-                  }}
-                >
-                  {n}
-                </div>
-                <h3
-                  style={{
-                    fontWeight: 800,
-                    fontSize: "1.1rem",
-                    color: "#0D0D0D",
-                    letterSpacing: "-0.01em",
-                    marginBottom: "0.65rem",
-                  }}
-                >
-                  {title}
-                </h3>
-                <p
-                  style={{ color: "#777", fontSize: "0.88rem", lineHeight: 1.75 }}
-                >
-                  {body}
-                </p>
+              <div key={n} style={{ borderTop: "3px solid #ED6C00", paddingTop: "1.5rem" }}>
+                <div style={{ fontWeight: 900, fontSize: "3.5rem", color: "#EBEBEB", lineHeight: 1, letterSpacing: "-0.05em", marginBottom: "0.75rem" }}>{n}</div>
+                <h3 style={{ fontWeight: 800, fontSize: "1.1rem", color: "#0D0D0D", letterSpacing: "-0.01em", marginBottom: "0.65rem" }}>{title}</h3>
+                <p style={{ color: "#777", fontSize: "0.88rem", lineHeight: 1.75 }}>{body}</p>
               </div>
             ))}
           </div>
@@ -790,65 +666,18 @@ export default function Landing() {
       {/* ── TESTIMONIAL ──────────────────────────────────────────────── */}
       <section style={{ background: "#ED6C00" }}>
         <div className="max-w-screen-xl mx-auto px-8 py-20 flex flex-col md:flex-row items-center gap-12">
-          <div
-            style={{
-              width: "130px",
-              height: "130px",
-              borderRadius: "50%",
-              overflow: "hidden",
-              flexShrink: 0,
-              border: "4px solid rgba(255,255,255,0.3)",
-            }}
-          >
-            <img
-              src="https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=260&q=80"
-              alt="HR Director"
-              style={{ width: "100%", height: "100%", objectFit: "cover" }}
-            />
+          <div style={{ width: "110px", height: "110px", borderRadius: "50%", overflow: "hidden", flexShrink: 0, border: "4px solid rgba(255,255,255,0.3)" }}>
+            <img src="https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=220&q=80" alt="Placement Director" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           </div>
           <div>
-            <div
-              style={{
-                color: "rgba(255,255,255,0.4)",
-                fontSize: "5rem",
-                lineHeight: 0.65,
-                fontWeight: 900,
-                marginBottom: "0.5rem",
-                fontFamily: "Georgia, serif",
-              }}
-            >
-              "
-            </div>
-            <blockquote
-              style={{
-                color: "white",
-                fontWeight: 700,
-                fontSize: "clamp(1.05rem,2.2vw,1.45rem)",
-                lineHeight: 1.55,
-                letterSpacing: "-0.01em",
-                margin: 0,
-                maxWidth: "660px",
-              }}
-            >
-              Synorlab gave our students 10× more interview practice than we
-              could ever provide manually. Placement rates improved by 28% in
-              one semester.
+            <div style={{ color: "rgba(255,255,255,0.4)", fontSize: "5rem", lineHeight: 0.65, fontWeight: 900, marginBottom: "0.5rem", fontFamily: "Georgia, serif" }}>"</div>
+            <blockquote style={{ color: "white", fontWeight: 700, fontSize: "clamp(1.05rem,2.2vw,1.45rem)", lineHeight: 1.55, letterSpacing: "-0.01em", margin: 0, maxWidth: "660px" }}>
+              Our placement rate jumped 28% in one semester. Students walk into interviews confident — they've already done it a dozen times with Synorlab.
             </blockquote>
             <div style={{ marginTop: "1.25rem" }}>
-              <div
-                style={{ color: "white", fontWeight: 800, fontSize: "0.88rem" }}
-              >
-                Dr. Sarah Mitchell
-              </div>
-              <div
-                style={{
-                  color: "rgba(255,255,255,0.6)",
-                  fontSize: "0.7rem",
-                  letterSpacing: "0.1em",
-                  marginTop: "2px",
-                }}
-              >
-                DIRECTOR OF CAREER SERVICES, BOSTON UNIVERSITY
+              <div style={{ color: "white", fontWeight: 800, fontSize: "0.88rem" }}>Dr. Priya Sharma</div>
+              <div style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.7rem", letterSpacing: "0.1em", marginTop: "2px" }}>
+                HEAD OF PLACEMENTS, MUMBAI INSTITUTE OF TECHNOLOGY
               </div>
             </div>
           </div>
@@ -857,69 +686,20 @@ export default function Landing() {
 
       {/* ── FINAL CTA ────────────────────────────────────────────────── */}
       <section style={{ background: "#2639A6" }}>
-        <div
-          className="max-w-screen-xl mx-auto px-8 py-24 flex flex-col lg:flex-row items-center justify-between gap-10"
-        >
+        <div className="max-w-screen-xl mx-auto px-8 py-24 flex flex-col lg:flex-row items-center justify-between gap-10">
           <div>
-            <div
-              style={{
-                color: "#ED6C00",
-                fontWeight: 700,
-                fontSize: "0.65rem",
-                letterSpacing: "0.2em",
-                marginBottom: "1.25rem",
-              }}
-            >
-              GET STARTED TODAY
-            </div>
-            <h2
-              style={{
-                fontWeight: 900,
-                fontSize: "clamp(2rem,4.5vw,3.75rem)",
-                color: "white",
-                lineHeight: 1.05,
-                letterSpacing: "-0.04em",
-                maxWidth: "560px",
-              }}
-            >
-              Ready to modernise your career centre?
+            <div style={{ color: "#ED6C00", fontWeight: 700, fontSize: "0.65rem", letterSpacing: "0.2em", marginBottom: "1.25rem" }}>GET STARTED TODAY</div>
+            <h2 style={{ fontWeight: 900, fontSize: "clamp(2rem,4.5vw,3.75rem)", color: "white", lineHeight: 1.05, letterSpacing: "-0.04em", maxWidth: "560px" }}>
+              Ready to transform your placement outcomes?
             </h2>
           </div>
-          <div
-            style={{ display: "flex", flexDirection: "column", gap: "14px", flexShrink: 0 }}
-          >
+          <div style={{ display: "flex", flexDirection: "column", gap: "14px", flexShrink: 0 }}>
             <Link href="/sign-up">
-              <button
-                style={{
-                  background: "white",
-                  color: "#2639A6",
-                  fontWeight: 800,
-                  fontSize: "0.8rem",
-                  letterSpacing: "0.1em",
-                  padding: "1rem 2.5rem",
-                  border: "none",
-                  borderRadius: 0,
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                DEPLOY FOR FREE <ArrowRight size={13} />
+              <button style={{ background: "white", color: "#2639A6", fontWeight: 800, fontSize: "0.8rem", letterSpacing: "0.1em", padding: "1rem 2.5rem", border: "none", borderRadius: 0, cursor: "pointer", display: "flex", alignItems: "center", gap: "8px", whiteSpace: "nowrap" }}>
+                START FOR FREE <ArrowRight size={13} />
               </button>
             </Link>
-            <a
-              href="mailto:hello@synorlab.com"
-              style={{
-                color: "rgba(255,255,255,0.55)",
-                fontSize: "0.72rem",
-                fontWeight: 700,
-                letterSpacing: "0.08em",
-                textDecoration: "none",
-                textAlign: "center",
-              }}
-            >
+            <a href="mailto:hello@synorlab.com" style={{ color: "rgba(255,255,255,0.55)", fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.08em", textDecoration: "none", textAlign: "center" }}>
               OR EMAIL US FOR A DEMO
             </a>
           </div>
@@ -928,54 +708,17 @@ export default function Landing() {
 
       {/* ── FOOTER ───────────────────────────────────────────────────── */}
       <footer style={{ background: "white", borderTop: "1px solid #EBEBEB" }}>
-        <div
-          className="max-w-screen-xl mx-auto px-8 py-8 flex flex-col md:flex-row items-center justify-between gap-4"
-        >
+        <div className="max-w-screen-xl mx-auto px-8 py-8 flex flex-col md:flex-row items-center justify-between gap-4">
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <SynorLogo size={20} />
-            <span
-              style={{
-                color: "#2639A6",
-                fontWeight: 800,
-                fontSize: "0.8rem",
-                letterSpacing: "0.08em",
-              }}
-            >
-              SYNORLAB
-            </span>
+            <span style={{ color: "#2639A6", fontWeight: 800, fontSize: "0.8rem", letterSpacing: "0.08em" }}>SYNORLAB</span>
           </div>
-          <p
-            style={{ color: "#aaa", fontSize: "0.72rem", fontWeight: 500 }}
-          >
-            AI interview practice for universities — © 2025 Synorlab
+          <p style={{ color: "#aaa", fontSize: "0.72rem", fontWeight: 500 }}>
+            AI interview training for university placement departments — © 2025 Synorlab
           </p>
           <div style={{ display: "flex", gap: "24px" }}>
-            <Link href="/sign-in">
-              <span
-                style={{
-                  color: "#666",
-                  fontSize: "0.72rem",
-                  fontWeight: 700,
-                  cursor: "pointer",
-                  letterSpacing: "0.06em",
-                }}
-              >
-                SIGN IN
-              </span>
-            </Link>
-            <Link href="/sign-up">
-              <span
-                style={{
-                  color: "#ED6C00",
-                  fontSize: "0.72rem",
-                  fontWeight: 700,
-                  cursor: "pointer",
-                  letterSpacing: "0.06em",
-                }}
-              >
-                GET STARTED
-              </span>
-            </Link>
+            <Link href="/sign-in"><span style={{ color: "#666", fontSize: "0.72rem", fontWeight: 700, cursor: "pointer", letterSpacing: "0.06em" }}>SIGN IN</span></Link>
+            <Link href="/sign-up"><span style={{ color: "#ED6C00", fontSize: "0.72rem", fontWeight: 700, cursor: "pointer", letterSpacing: "0.06em" }}>GET STARTED</span></Link>
           </div>
         </div>
       </footer>
@@ -987,15 +730,7 @@ export default function Landing() {
 
 function FeatureTag({ n, label }: { n: string; label: string }) {
   return (
-    <div
-      style={{
-        color: "#ED6C00",
-        fontWeight: 700,
-        fontSize: "0.65rem",
-        letterSpacing: "0.18em",
-        marginBottom: "1.25rem",
-      }}
-    >
+    <div style={{ color: "#ED6C00", fontWeight: 700, fontSize: "0.65rem", letterSpacing: "0.18em", marginBottom: "1.25rem" }}>
       {n} — {label}
     </div>
   );
@@ -1005,27 +740,8 @@ function FeatureList({ items, dark }: { items: string[]; dark?: boolean }) {
   return (
     <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "10px" }}>
       {items.map((item) => (
-        <li
-          key={item}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "10px",
-            color: dark ? "#444" : "rgba(255,255,255,0.8)",
-            fontSize: "0.88rem",
-            fontWeight: 600,
-          }}
-        >
-          <span
-            style={{
-              display: "block",
-              width: "6px",
-              height: "6px",
-              background: "#ED6C00",
-              borderRadius: "50%",
-              flexShrink: 0,
-            }}
-          />
+        <li key={item} style={{ display: "flex", alignItems: "center", gap: "10px", color: dark ? "#444" : "rgba(255,255,255,0.8)", fontSize: "0.88rem", fontWeight: 600 }}>
+          <span style={{ display: "block", width: "6px", height: "6px", background: "#ED6C00", borderRadius: "50%", flexShrink: 0 }} />
           {item}
         </li>
       ))}
@@ -1033,20 +749,9 @@ function FeatureList({ items, dark }: { items: string[]; dark?: boolean }) {
   );
 }
 
-function MobileFeature({
-  n,
-  label,
-  children,
-  dark,
-  light,
-  bg,
-}: {
-  n: string;
-  label: string;
-  children: React.ReactNode;
-  dark?: boolean;
-  light?: boolean;
-  bg?: string;
+function MobileFeature({ n, label, children, dark, light, bg }: {
+  n: string; label: string; children: React.ReactNode;
+  dark?: boolean; light?: boolean; bg?: string;
 }) {
   const background = bg ?? (light ? "#2639A6" : "white");
   void dark; void light;
