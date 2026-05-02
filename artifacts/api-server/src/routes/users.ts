@@ -2,7 +2,7 @@ import { Router } from "express";
 import { getAuth } from "@clerk/express";
 import { db, usersTable, invitesTable, accessCodesTable } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
-import { UpdateUserProfileBody, CompleteProfileBody } from "@workspace/api-zod";
+import { UpdateUserProfileBody, CompleteUserProfileBody } from "@workspace/api-zod";
 
 const router = Router();
 
@@ -100,7 +100,7 @@ router.put("/users/profile", requireAuth, async (req: any, res: any) => {
 router.put("/users/profile/complete", requireAuth, async (req: any, res: any) => {
   try {
     const userId = req.userId as string;
-    const parsed = CompleteProfileBody.safeParse(req.body);
+    const parsed = CompleteUserProfileBody.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({ error: "fullName and university are required" });
     }

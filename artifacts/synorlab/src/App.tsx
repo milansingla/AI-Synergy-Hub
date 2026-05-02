@@ -15,12 +15,16 @@ import InterviewResults from "@/pages/interview-results";
 import AdminPanel from "@/pages/admin";
 import FacilityPanel from "@/pages/facility";
 import Settings from "@/pages/settings";
+import ProfileSetup from "@/pages/profile-setup";
 
 const queryClient = new QueryClient();
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isSignedIn, isLoaded } = useAuth();
-  if (!isLoaded) {
+  const { data: profile, isLoading: profileLoading } = useGetUserProfile({ query: { enabled: !!isSignedIn } });
+  const [, navigate] = useLocation();
+
+  if (!isLoaded || (isSignedIn && profileLoading)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -28,6 +32,13 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     );
   }
   if (!isSignedIn) return <RedirectToSignIn />;
+
+  // Gate: redirect to profile setup if profile not completed
+  if (profile && !profile.profileCompleted) {
+    navigate("/profile-setup", { replace: true });
+    return null;
+  }
+
   return <>{children}</>;
 }
 
@@ -98,6 +109,11 @@ function AppRoutes() {
         </div>
       </Route>
 
+      {/* Profile setup — auth required but no profile gate (it IS the gate destination) */}
+      <Route path="/profile-setup">
+        <ProfileSetupRoute />
+      </Route>
+
       <Route path="/dashboard">
         <ProtectedRoute><Dashboard /></ProtectedRoute>
       </Route>
@@ -137,6 +153,27 @@ function AppRoutes() {
       <Route component={NotFound} />
     </Switch>
   );
+}
+
+function ProfileSetupRoute() {
+  const { isSignedIn, isLoaded } = useAuth();
+  const { data: profile, isLoading: profileLoading } = useGetUserProfile({ query: { enabled: !!isSignedIn } });
+  const [, navigate] = useLocation();
+
+  if (!isLoaded || (isSignedIn && profileLoading)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+  if (!isSignedIn) return <RedirectToSignIn />;
+  // Already completed — skip to dashboard
+  if (profile?.profileCompleted) {
+    navigate("/dashboard", { replace: true });
+    return null;
+  }
+  return <ProfileSetup />;
 }
 
 function ClerkWrappedApp() {
