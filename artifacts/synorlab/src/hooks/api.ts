@@ -61,7 +61,7 @@ export interface InterviewSummary {
   jdId: number;
   role: string;
   company: string;
-  status: "in_progress" | "completed";
+  status: "scheduled" | "in_progress" | "completed";
   score: number | null;
   messageCount: number;
   createdAt: string;
@@ -92,7 +92,7 @@ export interface InterviewDetail {
   jdId: number;
   role: string;
   company: string;
-  status: "in_progress" | "completed";
+  status: "scheduled" | "in_progress" | "completed";
   messages: InterviewMessage[];
   evaluation: Evaluation | null;
   createdAt: string;
@@ -159,10 +159,39 @@ export interface FacilityStats {
 export interface FacilityStudent {
   id: string;
   email: string;
+  fullName?: string | null;
+  department?: string | null;
+  yearOfStudy?: string | null;
   totalInterviews: number;
   completedInterviews: number;
   averageScore: number | null;
   lastActive: string | null;
+}
+
+export interface FacilityJD {
+  id: number;
+  role: string;
+  company: string;
+  skills: string[];
+  experienceLevel: string;
+  createdAt: string;
+}
+
+export interface BulkStudentResult {
+  created: number;
+  skipped: number;
+  errors: string[];
+}
+
+export interface BulkJDResult {
+  created: FacilityJD[];
+  errors: string[];
+}
+
+export interface ScheduleResult {
+  scheduled: number;
+  skipped: number;
+  errors: string[];
 }
 
 /* ─── Query key getters ─────────────────────────────────────────────────── */
@@ -175,6 +204,7 @@ export const getGetAdminStatsQueryKey = () => ["admin-stats"];
 export const getListAllInterviewsQueryKey = () => ["admin-interviews"];
 export const getListInvitesQueryKey = () => ["admin-invites"];
 export const getListAccessCodesQueryKey = () => ["admin-access-codes"];
+export const getListFacilityJDsQueryKey = () => ["facility-jds"];
 
 /* ─── Helpers (Supabase mode only) ─────────────────────────────────────── */
 
@@ -1376,6 +1406,65 @@ export function useGetFacilityStats() {
       };
     },
   });
+}
+
+/* ─── New facility hooks ────────────────────────────────────────────────── */
+
+export function useListFacilityJDs() {
+  return useQuery<FacilityJD[]>({
+    queryKey: getListFacilityJDsQueryKey(),
+    queryFn: () => restFetch<FacilityJD[]>("/api/facility/jds"),
+  });
+}
+
+export function useBulkUploadStudents() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (args: { students: { email: string; fullName?: string; department?: string; yearOfStudy?: string }[] }) =>
+      restFetch<BulkStudentResult>("/api/facility/bulk-students", jsonInit(args)),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["facility-students"] });
+    },
+  });
+}
+
+export function useBulkUploadJDs() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (args: { jds: string[] }) =>
+      restFetch<BulkJDResult>("/api/facility/bulk-jds", jsonInit(args)),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: getListFacilityJDsQueryKey() });
+    },
+  });
+}
+
+export function useScheduleInterviews() {
+  return useMutation({
+    mutationFn: (args: { jdId: number; studentIds: string[] }) =>
+      restFetch<ScheduleResult>("/api/facility/schedule", jsonInit(args)),
+  });
+}
+
+export function useStartScheduledInterview() {
+  return useMutation({
+    mutationFn: (args: { id: number }) =>
+      restFetch<{ id: number; content: string }>(`/api/interviews/${args.id}/start`, { method: "POST" }),
+  });
+}
+
+export async function downloadCohortReport(): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/facility/report`, { credentials: "include" });
+  if (!res.ok) throw new Error("Failed to generate report");
+  const blob = await res.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `cohort-report-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  window.URL.revokeObjectURL(url);
 }
 
 export function useListFacilityStudents() {

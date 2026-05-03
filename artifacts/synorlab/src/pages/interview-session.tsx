@@ -4,6 +4,7 @@ import {
   useGetInterview,
   useRespondToInterview,
   useCompleteInterview,
+  useStartScheduledInterview,
   getListInterviewsQueryKey,
   getGetInterviewStatsQueryKey,
 } from "@/hooks/api";
@@ -276,8 +277,9 @@ export default function InterviewSession() {
   const { data: interview, isLoading } = useGetInterview(interviewId, {
     query: { enabled: !!interviewId, queryKey: ["getInterview", interviewId], refetchInterval: false },
   });
-  const respond  = useRespondToInterview();
-  const complete = useCompleteInterview();
+  const respond        = useRespondToInterview();
+  const complete       = useCompleteInterview();
+  const startScheduled = useStartScheduledInterview();
 
   const answeredCount = localMessages.filter((m) => m.role === "user").length;
   const totalEstimated = localMessages.length > 0 ? Math.max(10, localMessages.filter((m) => m.role === "ai").length + 2) : 10;
@@ -431,15 +433,37 @@ export default function InterviewSession() {
 
   /* ── Start interview ─────────────────────────────────────────────────────── */
   const startInterview = useCallback(async () => {
+    const firstAiMsg = localMessages.find((m) => m.role === "ai");
+
+    if (!firstAiMsg) {
+      // Scheduled interview: no messages yet — generate first question server-side
+      setPhase("processing");
+      let firstContent: string;
+      try {
+        const result = await startScheduled.mutateAsync({ id: interviewId });
+        firstContent = result.content;
+        setLocalMessages([{ role: "ai", content: firstContent }]);
+        lastAiContentRef.current = firstContent;
+      } catch {
+        setPhase("intro");
+        toast({ title: "Failed to start interview. Please try again.", variant: "destructive" });
+        return;
+      }
+      await enterFullscreen();
+      interviewActiveRef.current = true;
+      setPhase("ai-speaking");
+      const doSpeak = () => speak(firstContent, () => { if (interviewActiveRef.current) setPhase("waiting"); });
+      if (voicesReadyRef.current) doSpeak(); else setTimeout(doSpeak, 600);
+      return;
+    }
+
     await enterFullscreen();
     interviewActiveRef.current = true;
-    const firstAiMsg = localMessages.find((m) => m.role === "ai");
-    if (!firstAiMsg) return;
     lastAiContentRef.current = firstAiMsg.content;
     setPhase("ai-speaking");
     const doSpeak = () => speak(firstAiMsg.content, () => { if (interviewActiveRef.current) setPhase("waiting"); });
     if (voicesReadyRef.current) doSpeak(); else setTimeout(doSpeak, 600);
-  }, [enterFullscreen, localMessages, speak]);
+  }, [enterFullscreen, interviewId, localMessages, speak, startScheduled, toast]);
 
   /* ── Effects ─────────────────────────────────────────────────────────────── */
   useEffect(() => {

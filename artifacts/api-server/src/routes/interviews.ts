@@ -293,6 +293,45 @@ router.get("/interviews/:id", requireAuth, async (req: any, res: any) => {
   }
 });
 
+// POST /api/interviews/:id/start  (scheduled → in_progress)
+router.post("/interviews/:id/start", requireAuth, async (req: any, res: any) => {
+  try {
+    const paramsParsed = GetInterviewParams.safeParse({ id: Number(req.params.id) });
+    if (!paramsParsed.success) return res.status(400).json({ error: "Invalid interview ID" });
+
+    const userId = req.userId as string;
+    const interviewId = paramsParsed.data.id;
+
+    const interview = await db
+      .select({ id: interviewsTable.id, jdId: interviewsTable.jdId, status: interviewsTable.status, userId: interviewsTable.userId })
+      .from(interviewsTable)
+      .where(eq(interviewsTable.id, interviewId))
+      .then((rows) => rows[0]);
+
+    if (!interview || interview.userId !== userId) return res.status(404).json({ error: "Interview not found" });
+    if (interview.status !== "scheduled") return res.status(400).json({ error: "Interview is not in scheduled state" });
+
+    const jd = await db.query.jobDescriptionsTable.findFirst({ where: eq(jobDescriptionsTable.id, interview.jdId) });
+    if (!jd) return res.status(404).json({ error: "Job description not found" });
+
+    const ctx = toJDContext(jd);
+    const questionSet = await generateQuestions(ctx);
+    const firstQuestion = await getNextQuestion(ctx, questionSet, [], 0);
+
+    const [aiMsg] = await db
+      .insert(interviewMessagesTable)
+      .values({ interviewId, role: "ai", content: firstQuestion.content })
+      .returning();
+
+    await db.update(interviewsTable).set({ status: "in_progress" }).where(eq(interviewsTable.id, interviewId));
+
+    res.json({ id: aiMsg.id, content: aiMsg.content });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to start interview" });
+  }
+});
+
 // POST /api/interviews/:id/respond
 router.post("/interviews/:id/respond", requireAuth, async (req: any, res: any) => {
   try {

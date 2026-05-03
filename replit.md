@@ -1,6 +1,6 @@
 # Synorlab Interviewer
 
-A B2B SaaS platform for universities where students upload job descriptions and practice AI-powered mock interviews. Fully static — runs on Netlify, GitHub Pages, or Cloudflare Pages with no backend server.
+A B2B SaaS platform for Indian university placement departments. Students upload job descriptions and practice AI-powered mock interviews. Institutions (facility users) can bulk-upload students, upload JDs, schedule interviews, and download cohort reports.
 
 ## Architecture
 
@@ -11,110 +11,99 @@ A B2B SaaS platform for universities where students upload job descriptions and 
 | Artifact | Kind | Path | Port |
 |----------|------|------|------|
 | `artifacts/synorlab` | React+Vite web app | `/` | 25111 |
-| `artifacts/api-server` | Legacy Express API (kept for reference) | `/api` | 8080 |
+| `artifacts/api-server` | Express API server | `/api` | 8080 |
 | `artifacts/mockup-sandbox` | Canvas mockup server | `/__mockup` | 8081 |
 
-The `api-server` is **no longer used by the frontend**. The synorlab app talks directly to Supabase and OpenAI from the browser.
-
-### Frontend-Only Architecture (production)
+### Architecture
 
 ```
-React/Vite (static)
-  ├── Clerk       — authentication (JWT tokens)
-  ├── Supabase    — PostgreSQL database via REST/JS client
-  │     └── RLS policies enforce per-user data isolation
-  └── OpenAI      — AI calls from the browser (gpt-4o)
-        ├── parseJD()          — parse job descriptions
-        ├── generateQuestions() — generate interview questions
-        ├── getNextQuestion()   — manage interview flow
-        └── evaluateInterview() — score the interview
+React/Vite (frontend)
+  ├── Clerk          — authentication (JWT tokens via @clerk/express + @clerk/react)
+  ├── TanStack Query — data fetching (hooks in src/hooks/api.ts)
+  └── Express API    — all data operations, AI calls, auth enforcement
+        ├── lib/db (Drizzle ORM + PostgreSQL)
+        └── lib/aiPrompts (OpenAI gpt-4o)
 ```
 
 ## Tech Stack
 
 - **Frontend**: React 19, Vite, Wouter (routing), TanStack Query, shadcn/ui, Tailwind CSS v4
-- **Auth**: Clerk (`@clerk/react` v6) — JWT template "supabase" required
-- **Database**: Supabase (PostgreSQL) — RLS + SECURITY DEFINER functions
-- **AI**: OpenAI gpt-4o via browser SDK (`dangerouslyAllowBrowser: true`)
-- **Deployment**: Netlify / static hosting
-
-## Supabase Setup (required before deployment)
-
-1. Create a Supabase project at https://app.supabase.com
-2. Run `supabase/schema.sql` in the SQL Editor
-3. Run `supabase/policies.sql` in the SQL Editor
-4. In Supabase → Authentication → Sign In with → Add "Clerk", enter your Clerk domain
-5. In Clerk Dashboard → JWT Templates → Create template named **"supabase"**:
-   ```json
-   {
-     "sub": "{{user.id}}",
-     "aud": "authenticated",
-     "role": "authenticated"
-   }
-   ```
-6. Set environment variables (in Netlify or `.env.local`):
-   ```
-   VITE_SUPABASE_URL=https://xxxx.supabase.co
-   VITE_SUPABASE_ANON_KEY=eyJ...
-   VITE_OPENAI_API_KEY=sk-...
-   VITE_CLERK_PUBLISHABLE_KEY=pk_live_...
-   ```
+- **Auth**: Clerk (`@clerk/react` v6 + `@clerk/express`)
+- **Database**: PostgreSQL via Drizzle ORM (`lib/db`)
+- **AI**: OpenAI gpt-4o via server-side SDK (`lib/aiPrompts`)
+- **API**: Express.js (`artifacts/api-server`)
 
 ## Key Source Files
 
 | File | Purpose |
 |------|---------|
-| `artifacts/synorlab/src/lib/supabase.ts` | Supabase client factory (uses Clerk JWT) |
-| `artifacts/synorlab/src/lib/ai.ts` | All OpenAI functions (browser-safe) |
-| `artifacts/synorlab/src/hooks/api.ts` | All TanStack Query hooks (replaces old generated hooks) |
-| `supabase/schema.sql` | Full Supabase schema (tables, indexes, enums) |
-| `supabase/policies.sql` | RLS policies + SECURITY DEFINER functions |
-| `netlify.toml` | Netlify deployment config |
-| `artifacts/synorlab/vite.static.config.ts` | Static build config (no PORT/BASE_PATH required) |
+| `artifacts/synorlab/src/hooks/api.ts` | All TanStack Query hooks + fetch helpers (1500+ lines) |
+| `artifacts/api-server/src/routes/` | Express route handlers |
+| `lib/db/src/schema/` | Drizzle schema definitions |
+| `lib/db/src/index.ts` | DB client export |
+| `lib/aiPrompts/src/index.ts` | All OpenAI prompt functions |
 
-## Database Schema (Supabase)
+## Database Schema
 
 - `users` — Clerk user IDs, email, role (student/facility/admin), profile fields
 - `job_descriptions` — role, company, skills (jsonb), experienceLevel, responsibilities (jsonb), rawText
-- `interviews` — links user + JD, status, `question_set` (jsonb — stored to avoid regenerating)
+- `interviews` — links user + JD, status (`scheduled | in_progress | completed`), `question_set` (jsonb)
 - `interview_messages` — per-message log (role: ai/user)
 - `evaluations` — overallScore, hiringVerdict, feedback, criteriaScores (jsonb), questionEvals (jsonb)
 - `invites` — email + role + token; checked at first sign-up to auto-assign role
 - `access_codes` — redeemable codes with role + maxUses
 
-## SECURITY DEFINER Functions (in policies.sql)
+## API Routes
 
-These run with elevated privileges for sensitive operations:
-- `upsert_user_profile(user_id, email)` — creates user with invite check
-- `redeem_access_code(code, user_id)` — validates + redeems code, updates role
-- `admin_update_user_role(target_id, role)` — admin-only role change
-- `admin_delete_user(target_id)` — admin-only user deletion
-- `admin_create_invite(email, role)` — admin-only invite creation
-- `admin_delete_invite(id)` — admin-only invite deletion
-- `admin_create_access_code(role, code, max_uses)` — admin-only
-- `admin_delete_access_code(id)` — admin-only
-- `admin_bulk_invite(invites jsonb)` — CSV bulk invite upload
-- `admin_delete_interview(id)` — admin-only interview deletion
+### Auth / Users (`routes/users.ts`)
+- `GET /api/users/profile` — get or create current user profile
+- `POST /api/users/profile/complete` — complete profile setup
+- `POST /api/users/redeem-code` — redeem access code
 
-## Static Build
+### Interviews (`routes/interviews.ts`)
+- `POST /api/interviews` — create interview (enforces 1-interview free limit for students)
+- `GET /api/interviews` — list user's interviews
+- `GET /api/interviews/stats` — user interview stats
+- `GET /api/interviews/:id` — get interview detail with messages
+- `POST /api/interviews/:id/start` — start a scheduled interview (generate first question, set in_progress)
+- `POST /api/interviews/:id/respond` — submit user answer, get next AI question
+- `POST /api/interviews/:id/complete` — finalize + evaluate interview
 
-```bash
-cd artifacts/synorlab
-pnpm run build:static   # uses vite.static.config.ts — no PORT/BASE_PATH required
-```
+### JD (`routes/jd.ts`)
+- `POST /api/jd/upload` — parse JD with AI, store, return parsed fields
 
-Output: `artifacts/synorlab/dist/public/`
+### Facility (`routes/facility.ts`)
+- `GET /api/facility/students` — list all students with stats
+- `GET /api/facility/stats` — cohort-level stats (totalStudents, activeThisWeek, avgScore, completionRate)
+- `GET /api/facility/jds` — list JDs uploaded by this facility user
+- `POST /api/facility/bulk-students` — bulk invite students by email (creates invites)
+- `POST /api/facility/bulk-jds` — bulk upload + AI-parse JDs (max 20)
+- `POST /api/facility/schedule` — create scheduled interviews for students with a JD
+- `GET /api/facility/report` — download CSV cohort report
 
-## Dev Build (Replit)
+### Admin (`routes/admin.ts`)
+- User management, interview management, invite management, access code management
 
-The Replit dev server uses `vite.config.ts` which requires `PORT` and `BASE_PATH` injected by the workflow runner.
+## Roles & Access Control
+
+| Role | Access |
+|------|--------|
+| `student` | Own interviews only; free plan limited to 1 interview; must have .edu/.ac.in email |
+| `facility` | Read all students; upload JDs; bulk invite; schedule interviews; download reports |
+| `admin` | Full access; bypass all limits |
+
+## Interview Statuses
+
+- `scheduled` — created by facility scheduling; no messages yet; starts when student clicks "Begin Interview"
+- `in_progress` — active session; messages being generated
+- `completed` — evaluated; score available
 
 ## AI Interview System
 
-Defined in `artifacts/synorlab/src/lib/ai.ts`:
+Defined in `lib/aiPrompts/src/index.ts`:
 
 ### Question Generation — Structured Phases
-`generateQuestions(jd: JDContext)` returns a `QuestionSet` stored in the `interviews.question_set` column:
+`generateQuestions(jd: JDContext)` returns a `QuestionSet` stored in `interviews.question_set`:
 1. **Opener** (1): Warm greeting, company + role mention, self-introduction
 2. **Technical** (4): Each references a specific tool/technology from the JD
 3. **Behavioral** (3): STAR-format anchored to key responsibilities
@@ -143,30 +132,41 @@ Hiring verdicts: Strong Hire (≥85) / Hire (70-84) / Hold (50-69) / No Hire (<5
 | `/sign-up` | Clerk sign-up | Public |
 | `/dashboard` | Stats + recent interviews | Protected |
 | `/jd/new` | Upload + parse JD, start interview | Protected |
-| `/interviews` | List all interviews | Protected |
-| `/interviews/:id` | Live voice interview session | Protected |
+| `/interviews` | List all interviews (scheduled/in_progress/completed badges) | Protected |
+| `/interviews/:id` | Live voice interview session (handles scheduled start) | Protected |
 | `/interviews/:id/results` | Evaluation results | Protected |
 | `/admin` | Admin panel (users, interviews, invites, codes) | Admin only |
-| `/facility` | Facility overview + student list | Facility only |
+| `/facility` | Facility panel (overview, students, upload, schedule, reports) | Facility only |
 | `/settings` | Account settings + code redemption | Protected |
 | `/profile-setup` | First-time profile completion | Protected |
 
+## Facility Panel Tabs
+
+| Tab | Purpose |
+|-----|---------|
+| Overview | Stats cards + completion rate bar |
+| Students | Table of all registered students with scores |
+| Upload | Bulk invite students by email; bulk upload JDs (AI-parsed) |
+| Schedule | Pick a JD + select students → create scheduled interviews |
+| Reports | Download CSV cohort report (email, name, dept, year, scores, last active) |
+
+## Business Model
+
+- **Student Free**: 1 mock interview, requires .edu / .ac.in email
+- **Professional**: $199/month for institutions — Contact us CTA, no free trial
+
 ## Environment Variables
 
-### Replit dev (existing)
-- `SESSION_SECRET` — legacy Express session (not used by frontend)
-- `DATABASE_URL` — legacy PostgreSQL (not used by frontend)
-
-### New (Netlify / Supabase deployment)
-- `VITE_SUPABASE_URL` — Supabase project URL
-- `VITE_SUPABASE_ANON_KEY` — Supabase anon/public key (safe to expose)
-- `VITE_OPENAI_API_KEY` — OpenAI API key (browser-exposed, restrict by domain in OpenAI dashboard)
-- `VITE_CLERK_PUBLISHABLE_KEY` — Clerk publishable key
+- `DATABASE_URL` — PostgreSQL connection string (Replit managed)
+- `SESSION_SECRET` — Express session secret
+- `CLERK_SECRET_KEY` — Clerk server-side secret key
+- `VITE_CLERK_PUBLISHABLE_KEY` — Clerk publishable key (frontend)
+- `OPENAI_API_KEY` — OpenAI API key (server-side only)
 
 ## Notes
 
-- The Clerk `proxyUrl` (`/api/__clerk`) has been removed — not needed for static hosting
-- `question_set` is stored in the `interviews` table on creation so `respond` calls don't re-generate it
-- The anon key is safe to expose (Supabase RLS enforces access control)
-- Restrict your OpenAI API key to specific domains in the OpenAI dashboard to prevent abuse
-- The `@clerk/react` v6 API does not export `SignedIn`/`SignedOut` — route protection uses `ProtectedRoute` with `useAuth().isSignedIn`
+- `question_set` is stored in `interviews` table on creation so respond calls don't regenerate it
+- Scheduled interviews have no messages until `POST /api/interviews/:id/start` is called
+- The frontend `startInterview` callback in `interview-session.tsx` auto-calls `/start` when `localMessages` is empty
+- Bulk JD upload processes JDs sequentially (max 20 per request) due to AI parsing latency
+- `.edu`, `.ac.in`, `.edu.in`, `.ac.uk` etc. emails bypass the edu gate check; facility/admin bypass entirely

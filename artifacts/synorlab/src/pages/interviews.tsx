@@ -4,7 +4,7 @@ import { AppLayout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, MessageSquare, Clock, ChevronRight, FileText } from "lucide-react";
+import { Plus, MessageSquare, Clock, ChevronRight, FileText, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 function ScorePill({ score }: { score: number | null | undefined }) {
@@ -16,6 +16,28 @@ function ScorePill({ score }: { score: number | null | undefined }) {
     <span className={cn("text-xs font-mono font-semibold border rounded px-1.5 py-0.5", color)}>
       {score}%
     </span>
+  );
+}
+
+function StatusBadge({ status }: { status: "scheduled" | "in_progress" | "completed" }) {
+  if (status === "completed") {
+    return (
+      <Badge variant="secondary" className="text-xs font-mono h-4 mt-0.5 bg-green-500/15 text-green-400 border-green-500/20">
+        completed
+      </Badge>
+    );
+  }
+  if (status === "scheduled") {
+    return (
+      <Badge variant="secondary" className="text-xs font-mono h-4 mt-0.5 bg-blue-500/15 text-blue-400 border-blue-500/20">
+        scheduled
+      </Badge>
+    );
+  }
+  return (
+    <Badge variant="secondary" className="text-xs font-mono h-4 mt-0.5">
+      in progress
+    </Badge>
   );
 }
 
@@ -58,7 +80,6 @@ export default function InterviewsList() {
             </div>
           ) : (
             <>
-              {/* Header row */}
               <div className="grid grid-cols-[1fr_100px_80px_80px_32px] gap-4 px-5 py-3 border-b border-border text-xs text-muted-foreground uppercase tracking-wider font-medium">
                 <span>Role</span>
                 <span>Date</span>
@@ -77,20 +98,18 @@ export default function InterviewsList() {
                       data-testid={`row-interview-${interview.id}`}
                     >
                       <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center shrink-0">
-                          <MessageSquare size={13} className="text-primary" />
+                        <div className={cn(
+                          "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
+                          interview.status === "scheduled" ? "bg-blue-500/10" : "bg-accent"
+                        )}>
+                          {interview.status === "scheduled"
+                            ? <Calendar size={13} className="text-blue-400" />
+                            : <MessageSquare size={13} className="text-primary" />
+                          }
                         </div>
                         <div className="min-w-0">
                           <p className="text-sm font-medium truncate">{interview.role}</p>
-                          <Badge
-                            variant={interview.status === "completed" ? "default" : "secondary"}
-                            className={cn(
-                              "text-xs font-mono h-4 mt-0.5",
-                              interview.status === "completed" && "bg-green-500/15 text-green-400 border-green-500/20"
-                            )}
-                          >
-                            {interview.status === "completed" ? "completed" : "in progress"}
-                          </Badge>
+                          <StatusBadge status={interview.status} />
                         </div>
                       </div>
 

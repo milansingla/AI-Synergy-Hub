@@ -4,7 +4,7 @@ import { z } from "zod/v4";
 import { usersTable } from "./users";
 import { jobDescriptionsTable } from "./jobDescriptions";
 
-export const interviewStatusEnum = pgEnum("interview_status", ["in_progress", "completed"]);
+export const interviewStatusEnum = pgEnum("interview_status", ["scheduled", "in_progress", "completed"]);
 
 export const interviewsTable = pgTable("interviews", {
   id: serial("id").primaryKey(),
