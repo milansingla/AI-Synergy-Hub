@@ -125,6 +125,21 @@ router.post("/interviews", requireAuth, async (req: any, res: any) => {
     const auth = getAuth(req);
     await ensureUser(userId, auth);
 
+    // Free student plan: 1 interview limit
+    const user = await db.query.usersTable.findFirst({ where: eq(usersTable.id, userId) });
+    if (user?.role === "student") {
+      const [interviewCount] = await db
+        .select({ count: count() })
+        .from(interviewsTable)
+        .where(eq(interviewsTable.userId, userId));
+      if (Number(interviewCount?.count ?? 0) >= 1) {
+        return res.status(403).json({
+          error: "free_limit_reached",
+          message: "The free plan includes 1 mock interview. Upgrade to a Professional plan for unlimited practice.",
+        });
+      }
+    }
+
     const jd = await db.query.jobDescriptionsTable.findFirst({
       where: and(eq(jobDescriptionsTable.id, parsed.data.jdId), eq(jobDescriptionsTable.userId, userId)),
     });

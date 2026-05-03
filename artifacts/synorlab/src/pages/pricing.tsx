@@ -13,7 +13,7 @@ const PLANS = [
     students: "1 student (you)",
     eduNote: true,
     features: [
-      { text: "Unlimited mock interviews", yes: true },
+      { text: "1 free mock interview", yes: true },
       { text: "AI interview engine", yes: true },
       { text: "Instant scored feedback", yes: true },
       { text: "Personal practice dashboard", yes: true },
@@ -25,7 +25,7 @@ const PLANS = [
   },
   {
     name: "Professional",
-    price: "£199",
+    price: "$199",
     sub: "per month",
     cta: "Start free trial",
     href: "/sign-up",

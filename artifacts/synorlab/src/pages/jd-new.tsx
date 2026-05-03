@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Zap, ArrowRight, Briefcase, Layers, BarChart2, Building2, ListChecks } from "lucide-react";
+import { Loader2, Zap, ArrowRight, Briefcase, Layers, BarChart2, Building2, ListChecks, Lock, ArrowUpRight } from "lucide-react";
 import type { ParsedJD } from "@/hooks/api";
 
 const schema = z.object({
@@ -22,6 +22,7 @@ export default function JDNew() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const [parsedJD, setParsedJD] = useState<ParsedJD | null>(null);
+  const [freeLimitReached, setFreeLimitReached] = useState(false);
 
   const uploadJD = useUploadJD();
   const createInterview = useCreateInterview();
@@ -45,12 +46,50 @@ export default function JDNew() {
     try {
       const interview = await createInterview.mutateAsync({ data: { jdId: parsedJD.id } });
       navigate(`/interviews/${interview.id}`);
-    } catch {
-      toast({ title: "Failed to start interview", variant: "destructive" });
+    } catch (err) {
+      if (err instanceof Error && err.message === "free_limit_reached") {
+        setFreeLimitReached(true);
+      } else {
+        toast({ title: "Failed to start interview", variant: "destructive" });
+      }
     }
   };
 
   const responsibilities = parsedJD ? (parsedJD.responsibilities as string[]) : [];
+
+  if (freeLimitReached) {
+    return (
+      <AppLayout>
+        <div className="px-8 py-16 max-w-lg">
+          <div className="rounded-2xl border border-border bg-card p-8 text-center">
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-primary/10 mb-5">
+              <Lock size={22} className="text-primary" />
+            </div>
+            <h2 className="text-xl font-bold tracking-tight mb-2">You've used your free interview</h2>
+            <p className="text-sm text-muted-foreground leading-relaxed mb-6">
+              The free plan includes <strong>1 mock interview</strong>. To practise again — and unlock cohort analytics, bulk JD uploads, and detailed scoring history — ask your placement officer about upgrading to a Professional plan.
+            </p>
+            <div className="space-y-3">
+              <Link href="/interviews">
+                <Button variant="outline" className="w-full gap-2">
+                  View my interview results
+                </Button>
+              </Link>
+              <a href="/pricing" target="_blank" rel="noreferrer">
+                <Button className="w-full gap-2">
+                  See Professional plan <ArrowUpRight size={14} />
+                </Button>
+              </a>
+            </div>
+            <p className="text-xs text-muted-foreground mt-6">
+              Already on an institutional plan?{" "}
+              <a href="/contact" className="underline">Contact us</a> and we'll sort it out.
+            </p>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout>

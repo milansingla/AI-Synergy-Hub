@@ -36,7 +36,7 @@ const FEATURES = [
   {
     icon: RefreshCw,
     title: "Unlimited Practice",
-    desc: "Students can practise as many times as they like, at any time — 3 AM before a placement? No problem.",
+    desc: "Students on institutional plans can practise as many times as they like, at any time — 3 AM before a placement? No problem.",
     color: NAVY,
   },
   {
