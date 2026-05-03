@@ -26,3 +26,12 @@ RewriteRule ^ index.html [QSA,L]
   ExpiresByType image/svg+xml "access plus 1 year"
   ExpiresByType font/woff2 "access plus 1 year"
 </IfModule>
+
+# Never cache config.js — edit it freely on the server without clearing CDN cache
+<Files "config.js">
+  <IfModule mod_headers.c>
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+  </IfModule>
+</Files>

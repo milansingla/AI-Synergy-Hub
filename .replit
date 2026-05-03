@@ -39,3 +39,4 @@ externalPort = 3000
 
 [userenv.shared]
 VITE_CLERK_PUBLISHABLE_KEY = "pk_test_bm9ibGUtYW5lbW9uZS05OS5jbGVyay5hY2NvdW50cy5kZXYk"
+ALLOWED_ORIGINS = "https://synorlab.dev"

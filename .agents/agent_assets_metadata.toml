@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "oAtjuj4d2ifvqOXlccRLi"
+uri = "file://synorlab-hostinger.zip"
+type = "unspecified"
+title = "synorlab-hostinger.zip — Upload contents to public_html"
