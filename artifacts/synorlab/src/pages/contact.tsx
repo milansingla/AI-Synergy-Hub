@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "wouter";
 import { ArrowRight, Mail, Clock, Users, BarChart3 } from "lucide-react";
 import { MarketingNav, MarketingFooter, MarketingStyles, marketingFont, NAVY, ORANGE } from "@/components/marketing-layout";
+import { usePageMeta } from "@/hooks/use-page-meta";
 
 const STUDENT_RANGES = ["< 100 students", "100–500 students", "500–1,000 students", "1,000–5,000 students", "5,000+ students"];
 const ROLES = ["Placement Officer / TPO", "Head of Placements", "Dean / Director", "IT Administrator", "Other"];
@@ -16,6 +17,10 @@ type FormState = {
 };
 
 export default function Contact() {
+  usePageMeta(
+    "Contact Us — Get Synorlab for Your Institution",
+    "Get Synorlab's AI mock interview platform for your university or college placement department. Talk to our team about the Professional plan and cohort setup."
+  );
   const [form, setForm] = useState<FormState>({
     name: "", institution: "", email: "", role: "", students: "", message: "",
   });

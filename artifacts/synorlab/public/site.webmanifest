@@ -1,0 +1,33 @@
+{
+  "name": "Synorlab — AI Mock Interview Platform",
+  "short_name": "Synorlab",
+  "description": "AI-powered mock interview practice for Indian university students and placement departments.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2639A6",
+  "orientation": "portrait-primary",
+  "lang": "en-IN",
+  "categories": ["education", "productivity"],
+  "screenshots": [
+    {
+      "src": "/opengraph.jpg",
+      "sizes": "1200x630",
+      "type": "image/jpeg",
+      "label": "Synorlab AI Interview Platform"
+    }
+  ],
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/apple-touch-icon.svg",
+      "sizes": "180x180",
+      "type": "image/svg+xml"
+    }
+  ]
+}

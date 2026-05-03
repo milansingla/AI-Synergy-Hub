@@ -1,0 +1,19 @@
+User-agent: *
+Allow: /
+Allow: /pricing
+Allow: /features
+Allow: /contact
+Disallow: /dashboard
+Disallow: /interviews
+Disallow: /jd/
+Disallow: /admin
+Disallow: /facility
+Disallow: /settings
+Disallow: /profile-setup
+Disallow: /sign-in
+Disallow: /sign-up
+
+# Crawl delay (optional — remove if causing issues)
+Crawl-delay: 1
+
+Sitemap: https://synorlab.dev/sitemap.xml

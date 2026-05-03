@@ -1,6 +1,7 @@
 import { Link } from "wouter";
 import { ArrowRight, FileText, Brain, BarChart3, Users, Download, RefreshCw, Shield, Zap } from "lucide-react";
 import { MarketingNav, MarketingFooter, MarketingStyles, marketingFont, NAVY, ORANGE, BulletList, FeatureTag, featureH2Dark, featureH2Light, featureBodyDark, featureBodyLight } from "@/components/marketing-layout";
+import { usePageMeta } from "@/hooks/use-page-meta";
 
 const FEATURES = [
   {
@@ -54,6 +55,10 @@ const FEATURES = [
 ];
 
 export default function Features() {
+  usePageMeta(
+    "Features — Role-Specific AI Interviews, Instant Scoring & Cohort Analytics",
+    "Discover Synorlab's features: AI-generated role-specific questions from any JD, 6-dimension evaluation framework, placement team dashboards, bulk scheduling, and CSV cohort reports."
+  );
   return (
     <div style={{ fontFamily: marketingFont }} className="min-h-screen bg-white text-[#0D0D0D] overflow-x-hidden">
       <MarketingStyles />

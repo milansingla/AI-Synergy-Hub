@@ -4,6 +4,7 @@ import { useAuth } from "@clerk/react";
 import { useLocation } from "wouter";
 import { ArrowRight } from "lucide-react";
 import { MarketingNav, MarketingFooter, MarketingStyles } from "@/components/marketing-layout";
+import { usePageMeta } from "@/hooks/use-page-meta";
 
 const MARQUEE = [
   "AI-POWERED MOCK INTERVIEWS",
@@ -331,6 +332,10 @@ function HeroAnimation() {
 }
 
 export default function Landing() {
+  usePageMeta(
+    "AI Mock Interview Platform for Indian Universities",
+    "AI-powered mock interviews tailored to any job description. Instant scored feedback. Cohort dashboards for placement departments. Free for students with university email."
+  );
   const { isSignedIn, isLoaded } = useAuth();
   const [, navigate] = useLocation();
 

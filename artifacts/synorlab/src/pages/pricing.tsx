@@ -1,6 +1,7 @@
 import { Link } from "wouter";
 import { ArrowRight, Check, X, GraduationCap } from "lucide-react";
 import { MarketingNav, MarketingFooter, MarketingStyles, marketingFont, NAVY, ORANGE } from "@/components/marketing-layout";
+import { usePageMeta } from "@/hooks/use-page-meta";
 
 const PLANS = [
   {
@@ -84,6 +85,10 @@ const FAQS = [
 ];
 
 export default function Pricing() {
+  usePageMeta(
+    "Pricing — Free for Students, Professional for Institutions",
+    "Synorlab is free for students with a university email. The Professional plan at $199/month gives placement departments unlimited AI mock interviews, cohort analytics, and scheduling."
+  );
   return (
     <div style={{ fontFamily: marketingFont }} className="min-h-screen bg-white text-[#0D0D0D] overflow-x-hidden">
       <MarketingStyles />

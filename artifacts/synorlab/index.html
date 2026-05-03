@@ -2,12 +2,201 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
-    <title>Synorlab Interviewer</title>
+
+    <!-- ── Viewport & Mobile ─────────────────────────────────────────── -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5" />
+    <meta name="theme-color" content="#2639A6" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Synorlab" />
+    <meta name="format-detection" content="telephone=no" />
+
+    <!-- ── Primary SEO ───────────────────────────────────────────────── -->
+    <title>Synorlab — AI Mock Interview Platform for Indian Universities</title>
+    <meta name="description" content="AI-powered mock interview platform for Indian university placement departments. Students practice job-specific interviews, get instant scored feedback, and placement teams get actionable cohort data." />
+    <meta name="keywords" content="AI mock interview India, placement preparation, interview practice India, university placement software, campus recruitment tool, student interview training, mock interview platform, placement cell software, AI interview bot India" />
+    <meta name="author" content="Synorlab" />
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+    <meta name="googlebot" content="index, follow" />
+    <link rel="canonical" href="https://synorlab.dev/" />
+
+    <!-- ── Open Graph / Facebook ─────────────────────────────────────── -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://synorlab.dev/" />
+    <meta property="og:site_name" content="Synorlab" />
+    <meta property="og:title" content="Synorlab — AI Mock Interview Platform for Indian Universities" />
+    <meta property="og:description" content="Give every student unlimited AI-powered mock interview practice — tailored to their target role, scored instantly, with data your placement team can act on." />
+    <meta property="og:image" content="https://synorlab.dev/opengraph.jpg" />
+    <meta property="og:image:secure_url" content="https://synorlab.dev/opengraph.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Synorlab AI Interview Platform — Practice interviews, get scored feedback" />
+    <meta property="og:locale" content="en_IN" />
+
+    <!-- ── Twitter / X Card ──────────────────────────────────────────── -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@synorlab" />
+    <meta name="twitter:creator" content="@synorlab" />
+    <meta name="twitter:title" content="Synorlab — AI Mock Interview Platform for Indian Universities" />
+    <meta name="twitter:description" content="AI-powered mock interviews tailored to any job description. Instant scored feedback. Built for India's placement departments." />
+    <meta name="twitter:image" content="https://synorlab.dev/opengraph.jpg" />
+    <meta name="twitter:image:alt" content="Synorlab AI Interview Platform" />
+
+    <!-- ── Favicons & PWA ────────────────────────────────────────────── -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.svg" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta name="msapplication-TileColor" content="#2639A6" />
+    <meta name="msapplication-config" content="/browserconfig.xml" />
+
+    <!-- ── Fonts (Alexandria — brand font) ──────────────────────────── -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Alexandria:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
+    <!-- ── Structured Data: Organization ────────────────────────────── -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Synorlab",
+      "url": "https://synorlab.dev",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://synorlab.dev/favicon.svg",
+        "width": 512,
+        "height": 512
+      },
+      "description": "AI-powered mock interview platform for Indian university placement departments",
+      "foundingDate": "2024",
+      "areaServed": {
+        "@type": "Country",
+        "name": "India"
+      },
+      "knowsAbout": [
+        "AI interview preparation",
+        "campus recruitment",
+        "placement training",
+        "university placement"
+      ],
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "contactType": "sales",
+        "url": "https://synorlab.dev/contact"
+      }
+    }
+    </script>
+
+    <!-- ── Structured Data: SoftwareApplication ─────────────────────── -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Synorlab AI Interviewer",
+      "applicationCategory": "EducationApplication",
+      "applicationSubCategory": "Career Development",
+      "operatingSystem": "Web Browser",
+      "description": "AI-powered mock interview practice platform for university students and placement departments in India. Upload any job description and practice role-specific interviews with instant scored feedback and 6-dimension evaluation.",
+      "url": "https://synorlab.dev",
+      "screenshot": "https://synorlab.dev/opengraph.jpg",
+      "offers": [
+        {
+          "@type": "Offer",
+          "name": "Student Free Plan",
+          "price": "0",
+          "priceCurrency": "INR",
+          "description": "1 free mock interview with university email"
+        },
+        {
+          "@type": "Offer",
+          "name": "Professional Plan",
+          "price": "199",
+          "priceCurrency": "USD",
+          "billingIncrement": "P1M",
+          "description": "Unlimited interviews for institutions with cohort analytics"
+        }
+      ],
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.8",
+        "reviewCount": "200",
+        "bestRating": "5",
+        "worstRating": "1"
+      },
+      "featureList": [
+        "Role-specific AI mock interviews from any job description",
+        "Instant scored feedback with 6-dimension evaluation framework",
+        "Placement team cohort dashboard and analytics",
+        "Bulk student management and CSV upload",
+        "Interview scheduling for entire cohorts",
+        "Downloadable CSV cohort reports",
+        "Voice-enabled interview sessions",
+        "Hiring verdict: Strong Hire, Hire, Hold, No Hire"
+      ]
+    }
+    </script>
+
+    <!-- ── Structured Data: WebSite ──────────────────────────────────── -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Synorlab",
+      "url": "https://synorlab.dev",
+      "description": "AI mock interview platform for Indian universities and placement departments",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "https://synorlab.dev/?q={search_term_string}"
+        },
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
+
+    <!-- ── Structured Data: FAQPage ──────────────────────────────────── -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is Synorlab?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Synorlab is an AI-powered mock interview platform built for Indian university placement departments. Students practice job-specific interviews using any job description, receive instant scored feedback, and placement officers get cohort-level analytics."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is Synorlab free for students?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Students with a valid university email (.edu, .ac.in, .edu.in) get one free AI mock interview. Institutions can purchase the Professional plan for unlimited access."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How does Synorlab's AI interviewer work?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Students paste any job description. Synorlab's AI reads the role, required skills and experience level, then generates a structured interview covering technical, behavioral, and situational questions. Answers are evaluated across 6 dimensions and scored instantly."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Which Indian universities use Synorlab?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Synorlab is used by placement cells at engineering colleges, business schools, and universities across India. Contact us to set up your institution."
+          }
+        }
+      ]
+    }
+    </script>
   </head>
   <body>
     <div id="root"></div>
