@@ -14,8 +14,10 @@ import {
 
 const USE_SUPABASE = !!import.meta.env.VITE_SUPABASE_URL;
 
+const API_BASE = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") ?? "";
+
 async function restFetch<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(path, { credentials: "include", ...init });
+  const res = await fetch(`${API_BASE}${path}`, { credentials: "include", ...init });
   if (!res.ok) {
     const body = await res.json().catch(() => ({ error: res.statusText }));
     throw new Error(body?.error ?? "Request failed");
