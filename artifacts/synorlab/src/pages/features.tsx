@@ -111,6 +111,62 @@ export default function Features() {
         </div>
       </section>
 
+      {/* ── INDIAN CAMPUS PHOTO STRIP ── */}
+      <section style={{ background: "#0D0D0D", overflow: "hidden" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr 1fr", height: "420px" }}>
+          {/* Left — large placement drive photo */}
+          <div style={{ position: "relative", overflow: "hidden" }}>
+            <img
+              src="https://media.gettyimages.com/id/94146744/photo/new-delhi-india-delhi-university-students-wait-for-their-interviews-during-a-job-placement.jpg?s=612x612&w=0&k=20&c=NBrjw_YXGc9qnUxv6_3uuSuJK7GD8FqdMP6xZRbjrUI="
+              alt="Students at placement drive, Delhi University"
+              style={{ width: "100%", height: "100%", objectFit: "cover", filter: "brightness(0.75)" }}
+            />
+            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(38,57,166,0.85) 0%, transparent 50%)" }} />
+            <div style={{ position: "absolute", bottom: "2rem", left: "2rem", right: "2rem" }}>
+              <div style={{ color: "#ED6C00", fontWeight: 800, fontSize: "0.6rem", letterSpacing: "0.2em", marginBottom: "0.4rem" }}>PLACEMENT DRIVE</div>
+              <div style={{ color: "white", fontWeight: 800, fontSize: "1.1rem", lineHeight: 1.25 }}>Delhi University<br />Campus Placements</div>
+            </div>
+          </div>
+          {/* Center — interview photo */}
+          <div style={{ position: "relative", overflow: "hidden" }}>
+            <img
+              src="https://media.gettyimages.com/id/1630774525/photo/a-confident-college-student-with-an-interviewer-shaking-hands.jpg?s=612x612&w=0&k=20&c=4kSOE9f-LSbUpbTBHg9QrBcI97vv6WDxAj0Xq1Vf4no="
+              alt="Indian student shaking hands after interview"
+              style={{ width: "100%", height: "100%", objectFit: "cover", filter: "brightness(0.7)" }}
+            />
+            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(237,108,0,0.8) 0%, transparent 55%)" }} />
+            <div style={{ position: "absolute", bottom: "2rem", left: "1.5rem", right: "1.5rem" }}>
+              <div style={{ color: "rgba(255,255,255,0.8)", fontWeight: 800, fontSize: "0.6rem", letterSpacing: "0.2em", marginBottom: "0.4rem" }}>INTERVIEW READY</div>
+              <div style={{ color: "white", fontWeight: 800, fontSize: "1rem", lineHeight: 1.3 }}>Students who<br />succeed on Day 1</div>
+            </div>
+          </div>
+          {/* Right — IIM campus */}
+          <div style={{ position: "relative", overflow: "hidden" }}>
+            <img
+              src="https://media.gettyimages.com/id/90559352/photo/india-students-at-indian-institute-of-management-campus-in-bannerghatta-road-bangalore.jpg?s=612x612&w=0&k=20&c=vs5atOd6afDbYXEQ0Z83xX6JgRc6O4GySA33AA1D9Ak="
+              alt="IIM Bangalore campus students"
+              style={{ width: "100%", height: "100%", objectFit: "cover", filter: "brightness(0.65)" }}
+            />
+            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(13,13,13,0.85) 0%, transparent 50%)" }} />
+            <div style={{ position: "absolute", bottom: "2rem", left: "1.5rem", right: "1.5rem" }}>
+              <div style={{ color: "#ED6C00", fontWeight: 800, fontSize: "0.6rem", letterSpacing: "0.2em", marginBottom: "0.4rem" }}>TIER-1 INSTITUTIONS</div>
+              <div style={{ color: "white", fontWeight: 800, fontSize: "1rem", lineHeight: 1.3 }}>IIM · IIT · NIT<br />and beyond</div>
+            </div>
+          </div>
+        </div>
+        {/* Caption bar */}
+        <div style={{ background: "#ED6C00", padding: "1rem 2.5rem", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ color: "white", fontWeight: 900, fontSize: "0.85rem", letterSpacing: "-0.01em" }}>
+            Trusted by placement departments across India — from Tier-1 IIMs to growing engineering colleges.
+          </div>
+          <div style={{ display: "flex", gap: "2rem" }}>
+            {["IIT Bombay", "NIT Trichy", "VIT Vellore", "BITS Pilani"].map(inst => (
+              <div key={inst} style={{ color: "rgba(255,255,255,0.75)", fontWeight: 700, fontSize: "0.65rem", letterSpacing: "0.12em", whiteSpace: "nowrap" }}>{inst}</div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ── SPOTLIGHT 1 — JD Parsing ── */}
       <section id="how" style={{ background: "#F5F4F2" }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", minHeight: "540px" }} className="hidden md:grid max-w-screen-2xl mx-auto">

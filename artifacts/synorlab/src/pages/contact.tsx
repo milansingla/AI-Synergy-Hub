@@ -41,8 +41,16 @@ export default function Contact() {
       <MarketingNav />
 
       {/* ── HERO ── */}
-      <section style={{ background: NAVY, padding: "64px 0 80px" }}>
-        <div className="max-w-screen-xl mx-auto px-8">
+      <section style={{ position: "relative", background: NAVY, padding: "64px 0 80px", overflow: "hidden" }}>
+        {/* Background campus photo */}
+        <img
+          src="https://media.gettyimages.com/id/90559316/photo/india-students-at-indian-institute-of-management-campus-in-bannerghatta-road-bangalore.jpg?s=612x612&w=0&k=20&c=5s3ZdxCsqkv5q7o2LVjBkoveSUpvtPHi4OEqSW2Cn2U="
+          alt=""
+          aria-hidden="true"
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 40%", opacity: 0.18 }}
+        />
+        <div style={{ position: "absolute", inset: 0, background: `linear-gradient(to right, ${NAVY} 45%, transparent 100%)` }} />
+        <div className="max-w-screen-xl mx-auto px-8" style={{ position: "relative" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "1.5rem" }}>
             <div style={{ width: "36px", height: "2px", background: ORANGE }} />
             <span style={{ color: ORANGE, fontWeight: 700, fontSize: "0.65rem", letterSpacing: "0.2em" }}>GET IN TOUCH</span>
@@ -194,14 +202,44 @@ export default function Contact() {
         </div>
       </section>
 
-      {/* ── TESTIMONIAL STRIP ── */}
-      <section style={{ background: "#0D0D0D", padding: "48px 0" }}>
-        <div className="max-w-screen-xl mx-auto px-8 text-center">
-          <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "0.75rem", letterSpacing: "0.12em", fontWeight: 700, marginBottom: "16px" }}>TRUSTED BY PLACEMENT DEPARTMENTS AT</p>
-          <div style={{ display: "flex", gap: "40px", justifyContent: "center", flexWrap: "wrap" }}>
-            {["Mumbai Institute of Technology", "Delhi College of Engineering", "VIT University", "BITS Pilani", "SRM Institute"].map(name => (
-              <span key={name} style={{ color: "rgba(255,255,255,0.3)", fontWeight: 700, fontSize: "0.8rem", letterSpacing: "0.04em" }}>{name}</span>
-            ))}
+      {/* ── PHOTO + TESTIMONIAL STRIP ── */}
+      <section style={{ background: "#0D0D0D", overflow: "hidden" }}>
+        {/* 2-photo row */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", height: "280px" }} className="hidden md:grid">
+          <div style={{ position: "relative", overflow: "hidden" }}>
+            <img
+              src="https://media.gettyimages.com/id/1630774516/photo/a-confident-college-student-with-an-interviewer-giving-a-job-interview-discussing.jpg?s=612x612&w=0&k=20&c=T1CwvWtqWqErF4GFQwxEGJTzOuDmQhin3-zu7-lJ8CI="
+              alt="Indian student in interview discussion"
+              style={{ width: "100%", height: "100%", objectFit: "cover", filter: "brightness(0.6)" }}
+            />
+            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to right, rgba(38,57,166,0.75) 0%, transparent 70%)" }} />
+            <div style={{ position: "absolute", top: "50%", left: "2rem", transform: "translateY(-50%)" }}>
+              <div style={{ color: ORANGE, fontWeight: 800, fontSize: "0.6rem", letterSpacing: "0.2em", marginBottom: "0.5rem" }}>STUDENT SUCCESS</div>
+              <div style={{ color: "white", fontWeight: 900, fontSize: "1.4rem", lineHeight: 1.2 }}>Interview<br />confident.</div>
+            </div>
+          </div>
+          <div style={{ position: "relative", overflow: "hidden" }}>
+            <img
+              src="https://media.gettyimages.com/id/2028994471/photo/happy-female-business-professionals-enjoying-during-team-meeting-at-office.jpg?s=612x612&w=0&k=20&c=UnYNrrM5s1uSzPs6J60MddiBfUV56DJAHVaTRizhrbw="
+              alt="Indian female professionals at office"
+              style={{ width: "100%", height: "100%", objectFit: "cover", filter: "brightness(0.55)" }}
+            />
+            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to right, rgba(237,108,0,0.7) 0%, transparent 70%)" }} />
+            <div style={{ position: "absolute", top: "50%", left: "2rem", transform: "translateY(-50%)" }}>
+              <div style={{ color: "rgba(255,255,255,0.8)", fontWeight: 800, fontSize: "0.6rem", letterSpacing: "0.2em", marginBottom: "0.5rem" }}>CAREER READY</div>
+              <div style={{ color: "white", fontWeight: 900, fontSize: "1.4rem", lineHeight: 1.2 }}>Placed at<br />top companies.</div>
+            </div>
+          </div>
+        </div>
+        {/* Institution names bar */}
+        <div style={{ padding: "32px 0" }}>
+          <div className="max-w-screen-xl mx-auto px-8 text-center">
+            <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "0.75rem", letterSpacing: "0.12em", fontWeight: 700, marginBottom: "16px" }}>TRUSTED BY PLACEMENT DEPARTMENTS AT</p>
+            <div style={{ display: "flex", gap: "40px", justifyContent: "center", flexWrap: "wrap" }}>
+              {["Mumbai Institute of Technology", "Delhi College of Engineering", "VIT University", "BITS Pilani", "SRM Institute", "NIT Trichy"].map(name => (
+                <span key={name} style={{ color: "rgba(255,255,255,0.3)", fontWeight: 700, fontSize: "0.8rem", letterSpacing: "0.04em" }}>{name}</span>
+              ))}
+            </div>
           </div>
         </div>
       </section>

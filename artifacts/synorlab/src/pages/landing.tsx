@@ -456,7 +456,7 @@ export default function Landing() {
         <div style={{ background: "white", minHeight: "520px" }} className="hidden md:grid">
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", minHeight: "520px" }}>
             <div className="lp-photo">
-              <img src="https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=900&q=80" alt="Students training" />
+              <img src="https://media.gettyimages.com/id/94146744/photo/new-delhi-india-delhi-university-students-wait-for-their-interviews-during-a-job-placement.jpg?s=612x612&w=0&k=20&c=NBrjw_YXGc9qnUxv6_3uuSuJK7GD8FqdMP6xZRbjrUI=" alt="Students at placement drive" />
               <div className="lp-ol" style={{ background: "linear-gradient(135deg, rgba(237,108,0,0.35) 0%, transparent 55%)" }} />
             </div>
             <div style={{ padding: "4rem 5rem", display: "flex", flexDirection: "column", justifyContent: "center" }}>
@@ -492,7 +492,7 @@ export default function Landing() {
               <FeatureList items={["Unlimited practice, any time", "Adaptive follow-up questions", "Covers behavioural & technical rounds"]} />
             </div>
             <div className="lp-photo">
-              <img src="https://images.unsplash.com/photo-1543269865-cbf427effbad?auto=format&fit=crop&w=900&q=80" alt="Student practising" />
+              <img src="https://media.gettyimages.com/id/1630774517/photo/a-confident-college-student-with-an-interviewer-giving-a-job-interview-discussing.jpg?s=612x612&w=0&k=20&c=lsIfQQ0US3SkkXAP7LQ0mrXPqToxnXu0X4X9PdFCPFE=" alt="Indian student in job interview" />
               <div className="lp-ol" style={{ background: "linear-gradient(135deg, rgba(38,57,166,0.5) 0%, transparent 55%)" }} />
             </div>
           </div>
@@ -506,7 +506,7 @@ export default function Landing() {
         <div style={{ background: "#F5F4F2", minHeight: "520px" }} className="hidden md:grid">
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", minHeight: "520px" }}>
             <div className="lp-photo">
-              <img src="https://images.unsplash.com/photo-1551836022-deb4988cc6c0?auto=format&fit=crop&w=900&q=80" alt="Placement results" />
+              <img src="https://media.gettyimages.com/id/1604037096/photo/three-indian-computer-engineering-college-students-from-the-odisha-region-study-together.jpg?s=612x612&w=0&k=20&c=zPY_tMfb3xUK2JFjvWTnkitwMQ5cYveSWCTd7q7J3fA=" alt="Indian engineering college students" />
               <div className="lp-ol" style={{ background: "linear-gradient(135deg, rgba(237,108,0,0.25) 0%, transparent 65%)" }} />
             </div>
             <div style={{ padding: "4rem 5rem", display: "flex", flexDirection: "column", justifyContent: "center" }}>
@@ -569,7 +569,7 @@ export default function Landing() {
       <section style={{ background: "#ED6C00" }}>
         <div className="max-w-screen-xl mx-auto px-8 py-20 flex flex-col md:flex-row items-center gap-12">
           <div style={{ width: "110px", height: "110px", borderRadius: "50%", overflow: "hidden", flexShrink: 0, border: "4px solid rgba(255,255,255,0.3)" }}>
-            <img src="https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=220&q=80" alt="Placement Director" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            <img src="https://media.istockphoto.com/id/493250111/photo/young-indian-college-professor-sitting-with-books.jpg?s=612x612&w=0&k=20&c=NQ0_EZIMzQwTZc7CykD1jUai8d3HiLADATbl0DhA3rM=" alt="Dr. Priya Sharma" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           </div>
           <div>
             <div style={{ color: "rgba(255,255,255,0.4)", fontSize: "5rem", lineHeight: 0.65, fontWeight: 900, marginBottom: "0.5rem", fontFamily: "Georgia, serif" }}>"</div>
