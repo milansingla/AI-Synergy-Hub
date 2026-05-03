@@ -1,25 +1,26 @@
 import { Link } from "wouter";
-import { ArrowRight, Check, X } from "lucide-react";
+import { ArrowRight, Check, X, GraduationCap } from "lucide-react";
 import { MarketingNav, MarketingFooter, MarketingStyles, marketingFont, NAVY, ORANGE } from "@/components/marketing-layout";
 
 const PLANS = [
   {
-    name: "Starter",
+    name: "Student Free",
     price: "Free",
     sub: "Forever",
     cta: "Sign up free",
     href: "/sign-up",
     highlight: false,
-    students: "Up to 50 students",
+    students: "1 student (you)",
+    eduNote: true,
     features: [
-      { text: "Unlimited practice sessions", yes: true },
+      { text: "Unlimited mock interviews", yes: true },
       { text: "AI interview engine", yes: true },
       { text: "Instant scored feedback", yes: true },
-      { text: "Basic student dashboard", yes: true },
-      { text: "Cohort analytics", yes: false },
+      { text: "Personal practice dashboard", yes: true },
+      { text: "Cohort / team analytics", yes: false },
       { text: "CSV exports", yes: false },
       { text: "Bulk student invite", yes: false },
-      { text: "Priority support", yes: false },
+      { text: "Placement officer dashboard", yes: false },
     ],
   },
   {
@@ -65,12 +66,12 @@ const PLANS = [
 
 const FAQS = [
   {
-    q: "Can students use Synorlab on their own after we onboard them?",
-    a: "Yes — once a student is in your cohort, they can practice anytime, on any device, with any job description. There's no session limit.",
+    q: "Why does the free plan require a university email?",
+    a: "The free Student plan is exclusively for individual learners at educational institutions. We accept .edu, .ac.in, .edu.in, .ac.uk, and other recognised university domains. If your email doesn't qualify, ask your institution about a Professional or Enterprise account.",
   },
   {
-    q: "What happens if we exceed the student limit on Starter?",
-    a: "You'll be prompted to upgrade to Professional. Existing students won't lose access; new invites will be paused until you upgrade.",
+    q: "Our institution doesn't use a .edu email — can we still use Synorlab?",
+    a: "Yes! Institutional Professional and Enterprise plans have no email restrictions. Contact us and we'll set up your placement department with bulk student access, cohort analytics, and a dedicated placement officer dashboard.",
   },
   {
     q: "Is there a long-term contract for Professional?",
@@ -78,7 +79,7 @@ const FAQS = [
   },
   {
     q: "Do you offer discounts for government universities?",
-    a: "Yes — we offer special pricing for public universities and government-funded institutions. Contact us to discuss.",
+    a: "Yes — we offer special pricing for public universities and government-funded institutions in India. Contact us to discuss.",
   },
 ];
 
@@ -99,8 +100,8 @@ export default function Pricing() {
           <h1 style={{ fontWeight: 900, fontSize: "clamp(2.5rem,6vw,5rem)", color: "#0D0D0D", lineHeight: 0.95, letterSpacing: "-0.04em", marginBottom: "1.25rem" }}>
             Simple, honest <span style={{ color: NAVY }}>pricing.</span>
           </h1>
-          <p style={{ color: "#666", fontSize: "clamp(0.95rem,1.5vw,1.1rem)", lineHeight: 1.75, maxWidth: "500px", margin: "0 auto" }}>
-            Start free for small cohorts. Scale up when you need analytics, exports, and more students.
+          <p style={{ color: "#666", fontSize: "clamp(0.95rem,1.5vw,1.1rem)", lineHeight: 1.75, maxWidth: "540px", margin: "0 auto" }}>
+            Individual students practise free with a university email. Institutions get cohort analytics, bulk invites, and a dedicated placement dashboard.
           </p>
         </div>
       </section>
@@ -135,8 +136,16 @@ export default function Pricing() {
                     {plan.price !== "Custom" && <span style={{ color: plan.highlight ? "rgba(255,255,255,0.5)" : "#AAA", fontSize: "0.8rem" }}>{plan.sub}</span>}
                   </div>
                   {plan.price === "Custom" && <div style={{ color: plan.highlight ? "rgba(255,255,255,0.5)" : "#888", fontSize: "0.78rem", marginTop: "4px" }}>{plan.sub}</div>}
-                  <div style={{ marginTop: "12px", display: "inline-block", background: plan.highlight ? "rgba(237,108,0,0.15)" : "#F5F4F2", color: plan.highlight ? ORANGE : "#555", fontWeight: 700, fontSize: "0.7rem", padding: "4px 10px", borderRadius: "100px" }}>
-                    {plan.students}
+                  <div style={{ marginTop: "12px", display: "flex", flexWrap: "wrap", gap: "6px", alignItems: "center" }}>
+                    <div style={{ display: "inline-block", background: plan.highlight ? "rgba(237,108,0,0.15)" : "#F5F4F2", color: plan.highlight ? ORANGE : "#555", fontWeight: 700, fontSize: "0.7rem", padding: "4px 10px", borderRadius: "100px" }}>
+                      {plan.students}
+                    </div>
+                    {"eduNote" in plan && plan.eduNote && (
+                      <div style={{ display: "inline-flex", alignItems: "center", gap: "4px", background: "#FEF3C7", color: "#92400E", fontWeight: 700, fontSize: "0.65rem", padding: "4px 8px", borderRadius: "100px", border: "1px solid #FDE68A" }}>
+                        <GraduationCap size={10} />
+                        .edu / .ac.in required
+                      </div>
+                    )}
                   </div>
                 </div>
 

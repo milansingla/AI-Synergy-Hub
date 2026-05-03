@@ -6,6 +6,12 @@ import { UpdateUserProfileBody, CompleteUserProfileBody } from "@workspace/api-z
 
 const router = Router();
 
+const EDU_DOMAINS = [".edu", ".ac.in", ".edu.in", ".ac.uk", ".edu.au", ".ac.nz", ".ac.za"];
+function isEducationalEmail(email: string): boolean {
+  const lower = email.toLowerCase();
+  return EDU_DOMAINS.some((d) => lower.endsWith(d));
+}
+
 const requireAuth = (req: any, res: any, next: any) => {
   const auth = getAuth(req);
   const userId = auth?.userId;
@@ -42,7 +48,18 @@ router.get("/users/profile", requireAuth, async (req: any, res: any) => {
       const invite = await db.query.invitesTable.findFirst({
         where: eq(invitesTable.email, email.toLowerCase()),
       });
-      const role = invite && !invite.used ? invite.role : "student";
+      const hasInvite = invite && !invite.used;
+      const role = hasInvite ? invite.role : "student";
+
+      // Free (student) plan requires a university/educational email address
+      if (!hasInvite && !isEducationalEmail(email)) {
+        return res.status(403).json({
+          error: "edu_email_required",
+          message:
+            "The free plan is for individual university students only. Please sign in with a university email (.edu, .ac.in, .edu.in, etc.) or contact us to set up an institutional account.",
+          email,
+        });
+      }
 
       const [created] = await db
         .insert(usersTable)
