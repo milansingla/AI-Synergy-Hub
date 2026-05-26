@@ -6,6 +6,7 @@
 -- ── Enable RLS ────────────────────────────────────────────────────────────
 
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app_config ENABLE ROW LEVEL SECURITY;
 ALTER TABLE job_descriptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE interviews ENABLE ROW LEVEL SECURITY;
 ALTER TABLE interview_messages ENABLE ROW LEVEL SECURITY;
@@ -32,19 +33,23 @@ SECURITY DEFINER AS $$
 DECLARE
   v_role TEXT := 'student';
   v_invite_id BIGINT;
+  v_norm_email TEXT := LOWER(TRIM(p_email));
 BEGIN
   SELECT id, role::text INTO v_invite_id, v_role
   FROM invites
-  WHERE email = LOWER(TRIM(p_email)) AND used = FALSE
+  WHERE email = v_norm_email AND used = FALSE
   LIMIT 1;
 
   IF v_invite_id IS NULL THEN
     v_role := 'student';
   END IF;
 
+  -- Remove any stale row that owns this email under a different auth id.
+  DELETE FROM users WHERE email = v_norm_email AND id != p_user_id;
+
   INSERT INTO users (id, email, role)
-  VALUES (p_user_id, LOWER(TRIM(p_email)), v_role::user_role)
-  ON CONFLICT (id) DO NOTHING;
+  VALUES (p_user_id, v_norm_email, v_role::user_role)
+  ON CONFLICT (id) DO UPDATE SET email = EXCLUDED.email;
 
   IF v_invite_id IS NOT NULL THEN
     UPDATE invites SET used = TRUE WHERE id = v_invite_id;
@@ -319,6 +324,11 @@ CREATE POLICY "evals_delete" ON evaluations FOR DELETE
 
 CREATE POLICY "invites_admin" ON invites FOR ALL
   USING (get_my_role() = 'admin');
+
+-- ── RLS Policies — app_config ────────────────────────────────────────────
+
+-- Anyone (anon or authenticated) can read config; only service role can write.
+CREATE POLICY "app_config_read" ON app_config FOR SELECT USING (true);
 
 -- ── RLS Policies — access_codes ───────────────────────────────────────────
 

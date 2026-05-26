@@ -112,3 +112,8 @@ CREATE INDEX idx_messages_interview_id ON interview_messages(interview_id);
 CREATE INDEX idx_evaluations_interview_id ON evaluations(interview_id);
 CREATE INDEX idx_invites_email ON invites(email);
 CREATE INDEX idx_access_codes_code ON access_codes(code);
+
+CREATE TABLE app_config (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL DEFAULT ''
+);

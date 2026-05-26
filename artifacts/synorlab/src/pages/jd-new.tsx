@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation, Link } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -23,9 +23,23 @@ export default function JDNew() {
   const { toast } = useToast();
   const [parsedJD, setParsedJD] = useState<ParsedJD | null>(null);
   const [freeLimitReached, setFreeLimitReached] = useState(false);
+  const [parseElapsed, setParseElapsed] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const uploadJD = useUploadJD();
   const createInterview = useCreateInterview();
+
+  // Elapsed-time ticker while parse is pending
+  useEffect(() => {
+    if (uploadJD.isPending) {
+      setParseElapsed(0);
+      timerRef.current = setInterval(() => setParseElapsed((s) => s + 1), 1000);
+    } else {
+      if (timerRef.current) clearInterval(timerRef.current);
+      setParseElapsed(0);
+    }
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [uploadJD.isPending]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -36,8 +50,16 @@ export default function JDNew() {
     try {
       const result = await uploadJD.mutateAsync({ data: { text: values.text } });
       setParsedJD(result);
-    } catch {
-      toast({ title: "Failed to parse job description", variant: "destructive" });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      const isRateLimit = msg.toLowerCase().includes("rate limit") || msg.includes("429");
+      toast({
+        title: isRateLimit ? "API rate limit — please wait" : "Failed to parse job description",
+        description: isRateLimit
+          ? "Gemini free tier: 15 requests/minute. Wait ~60 seconds and try again."
+          : msg,
+        variant: "destructive",
+      });
     }
   };
 
@@ -50,7 +72,8 @@ export default function JDNew() {
       if (err instanceof Error && err.message === "free_limit_reached") {
         setFreeLimitReached(true);
       } else {
-        toast({ title: "Failed to start interview", variant: "destructive" });
+        const msg = err instanceof Error ? err.message : String(err);
+        toast({ title: "Failed to start interview", description: msg, variant: "destructive" });
       }
     }
   };
@@ -130,7 +153,14 @@ export default function JDNew() {
                   data-testid="btn-parse-jd"
                 >
                   {uploadJD.isPending ? (
-                    <><Loader2 size={14} className="animate-spin" /> Parsing with AI...</>
+                    <>
+                      <Loader2 size={14} className="animate-spin" />
+                      {parseElapsed < 8
+                        ? "Parsing with AI…"
+                        : parseElapsed < 20
+                        ? `Processing… (${parseElapsed}s)`
+                        : `Retrying after rate limit… (${parseElapsed}s)`}
+                    </>
                   ) : (
                     <><Zap size={14} /> Parse job description</>
                   )}

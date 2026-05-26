@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { useAuth, UserButton } from "@clerk/react";
+import { useAuthContext } from "@/lib/auth-context";
 import {
   LayoutDashboard,
   FileText,
@@ -59,7 +59,7 @@ function RoleBadge({ role }: { role: string }) {
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuthContext();
   const { data: profile } = useGetUserProfile();
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -114,7 +114,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       {/* Footer */}
       <div className="px-4 py-4 border-t border-sidebar-border space-y-3 shrink-0 bg-secondary/40">
         <div className="flex items-center gap-3">
-          <UserButton />
+          <div className="w-7 h-7 rounded-full bg-primary/10 border border-border flex items-center justify-center shrink-0">
+            <span className="text-xs font-bold text-primary">
+              {(profile?.fullName || user?.email || "?")[0].toUpperCase()}
+            </span>
+          </div>
           <div className="flex-1 min-w-0">
             <p className="text-xs font-semibold text-sidebar-foreground truncate">
               {profile?.fullName || profile?.email || "Loading…"}
@@ -169,8 +173,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             </div>
             <span className="font-bold text-sm tracking-tight">Synorlab</span>
           </div>
-          <div className="ml-auto">
-            <UserButton />
+          <div className="ml-auto w-7 h-7 rounded-full bg-primary/10 border border-border flex items-center justify-center">
+            <span className="text-xs font-bold text-primary">
+              {(profile?.fullName || user?.email || "?")[0].toUpperCase()}
+            </span>
           </div>
         </header>
 

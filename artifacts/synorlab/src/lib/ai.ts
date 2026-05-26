@@ -1,11 +1,81 @@
-const USE_PROXY = !import.meta.env.VITE_OPENAI_API_KEY;
+import { loadConfig } from "@/lib/config";
+
+/** Strip markdown code fences and extract raw JSON */
+function extractJSON(raw: string): string {
+  let s = raw.trim();
+  // Remove ```json ... ``` or ``` ... ```
+  const fenceMatch = s.match(/```(?:json)?\s*\n?([\s\S]*?)```/);
+  if (fenceMatch) s = fenceMatch[1].trim();
+  return s;
+}
+
+/** Retry wrapper — automatically retries on 429 rate-limit with exponential backoff */
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  maxAttempts = 5,
+  onRetry?: (attempt: number, waitSec: number) => void
+): Promise<T> {
+  // Delays per retry attempt (seconds): 4s, 10s, 20s, 35s
+  const DELAYS = [4000, 10000, 20000, 35000];
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await fn();
+    } catch (err: unknown) {
+      const e = err as { status?: number; message?: string };
+      const msg = String(e?.message ?? "");
+      const is429 =
+        e?.status === 429 ||
+        msg.includes("429") ||
+        msg.toLowerCase().includes("rate limit") ||
+        msg.toLowerCase().includes("resource_exhausted") ||
+        msg.toLowerCase().includes("quota");
+
+      if (is429 && attempt < maxAttempts) {
+        const wait = DELAYS[attempt - 1] ?? 35000;
+        console.warn(`Gemini 429 — retrying in ${wait / 1000}s (attempt ${attempt}/${maxAttempts - 1})`);
+        onRetry?.(attempt, wait / 1000);
+        await new Promise((r) => setTimeout(r, wait));
+        continue;
+      }
+
+      // Final failure — throw a human-readable message
+      if (is429) {
+        throw new Error(
+          "API rate limit reached. Gemini allows 15 requests/minute on the free tier. " +
+          "Please wait 60 seconds and try again."
+        );
+      }
+      throw err;
+    }
+  }
+  throw new Error("Max retries exceeded");
+}
 
 async function getOpenAI() {
   const { default: OpenAI } = await import("openai");
+  const cfg = await loadConfig();
+
+  // Proxy Gemini through Vite dev server to avoid CORS
+  let baseURL = cfg.AI_INTEGRATIONS_OPENAI_BASE_URL || undefined;
+  if (baseURL?.includes("generativelanguage.googleapis.com")) {
+    baseURL = baseURL.replace(
+      "https://generativelanguage.googleapis.com",
+      `${window.location.origin}/gemini`
+    );
+  }
+
   return new OpenAI({
-    apiKey: import.meta.env.VITE_OPENAI_API_KEY as string,
+    apiKey: cfg.AI_INTEGRATIONS_OPENAI_API_KEY,
+    baseURL,
     dangerouslyAllowBrowser: true,
+    maxRetries: 0, // we handle retries ourselves via withRetry
   });
+}
+
+async function USE_PROXY() {
+  const cfg = await loadConfig();
+  return !cfg.AI_INTEGRATIONS_OPENAI_API_KEY;
 }
 
 async function callProxy<T>(type: string, payload: unknown): Promise<T> {
@@ -68,10 +138,10 @@ export interface JDContext {
 }
 
 export async function parseJD(jdText: string): Promise<ParsedJD> {
-  if (USE_PROXY) return callProxy<ParsedJD>("parseJD", { jdText });
+  if (await USE_PROXY()) return callProxy<ParsedJD>("parseJD", { jdText });
   const openai = await getOpenAI();
-  const response = await openai.chat.completions.create({
-    model: "gpt-4o",
+  const response = await withRetry(() => openai.chat.completions.create({
+    model: "gemini-2.5-flash-lite",
     max_completion_tokens: 1024,
     messages: [
       {
@@ -93,24 +163,24 @@ ${jdText}
 Return only valid JSON, no markdown, no code blocks.`,
       },
     ],
-  });
+  }));
 
   const content = response.choices[0]?.message?.content ?? "{}";
   try {
-    return JSON.parse(content) as ParsedJD;
+    return JSON.parse(extractJSON(content)) as ParsedJD;
   } catch {
     return { role: "Software Engineer", company: "", skills: [], experienceLevel: "mid-level", responsibilities: [] };
   }
 }
 
 export async function generateQuestions(jd: JDContext): Promise<QuestionSet> {
-  if (USE_PROXY) return callProxy<QuestionSet>("generateQuestions", { jd });
+  if (await USE_PROXY()) return callProxy<QuestionSet>("generateQuestions", { jd });
   const openai = await getOpenAI();
   const companyCtx = jd.company || "this company";
 
-  const response = await openai.chat.completions.create({
-    model: "gpt-4o",
-    max_completion_tokens: 3000,
+  const response = await withRetry(() => openai.chat.completions.create({
+    model: "gemini-2.5-flash-lite",
+    max_completion_tokens: 2500,
     messages: [
       {
         role: "system",
@@ -129,16 +199,16 @@ ${jd.responsibilities.map((r, i) => `${i + 1}. ${r}`).join("\n")}
 
 Full Job Description (for deep context):
 ---
-${jd.rawText}
+${jd.rawText.slice(0, 1500)}
 ---
 
 Generate the following, ALL grounded strictly in this JD:
 
 1. "opener" (string): A warm, professional welcome that names the company and role, then asks the candidate to introduce themselves and explain what specifically attracted them to THIS role at THIS company.
 
-2. "technical" (array of 4 strings): Deep-dive questions on the specific technologies, tools, and responsibilities in the JD. Each question must reference something explicitly mentioned in the JD — not generic tech questions.
+2. "technical" (array of 3 strings): Deep-dive questions on the specific technologies, tools, and responsibilities in the JD. Each question must reference something explicitly mentioned in the JD — not generic tech questions.
 
-3. "behavioral" (array of 3 strings): STAR-format behavioral questions directly tied to the key responsibilities in the JD. Start each with "Tell me about a time when..." or "Describe a situation where..." and anchor it to a specific responsibility from the JD.
+3. "behavioral" (array of 2 strings): STAR-format behavioral questions directly tied to the key responsibilities in the JD. Start each with "Tell me about a time when..." or "Describe a situation where..." and anchor it to a specific responsibility from the JD.
 
 4. "situational" (array of 2 strings): Scenario-based questions that present a realistic challenge someone in THIS specific role at THIS company would face, based on the JD context.
 
@@ -153,11 +223,11 @@ RULES:
 Return only valid JSON with keys: opener, technical, behavioral, situational, closer. No markdown, no code blocks.`,
       },
     ],
-  });
+  }));
 
   const content = response.choices[0]?.message?.content ?? "{}";
   try {
-    const q = JSON.parse(content) as {
+    const q = JSON.parse(extractJSON(content)) as {
       opener: string;
       technical: string[];
       behavioral: string[];
@@ -194,7 +264,7 @@ export async function getNextQuestion(
   conversationHistory: Array<{ role: "ai" | "user"; content: string }>,
   answeredCount: number
 ): Promise<{ content: string; isComplete: boolean; phase: string }> {
-  if (USE_PROXY) return callProxy<{ content: string; isComplete: boolean; phase: string }>("getNextQuestion", { jd, questionSet, conversationHistory, answeredCount });
+  if (await USE_PROXY()) return callProxy<{ content: string; isComplete: boolean; phase: string }>("getNextQuestion", { jd, questionSet, conversationHistory, answeredCount });
   const { all: questionPool } = questionSet;
 
   if (answeredCount >= questionPool.length) {
@@ -249,9 +319,9 @@ Currently delivering: Q${answeredCount + 1}.`;
     content: msg.content,
   }));
 
-  const response = await openai.chat.completions.create({
-    model: "gpt-4o",
-    max_completion_tokens: 600,
+  const response = await withRetry(() => openai.chat.completions.create({
+    model: "gemini-2.5-flash-lite",
+    max_completion_tokens: 400,
     messages: [
       { role: "system", content: systemPrompt },
       ...messages,
@@ -259,7 +329,7 @@ Currently delivering: Q${answeredCount + 1}.`;
         ? [{ role: "user" as const, content: "Please start the interview." }]
         : []),
     ],
-  });
+  }));
 
   return {
     content: response.choices[0]?.message?.content ?? "Let's proceed to the next question.",
@@ -281,7 +351,7 @@ export async function evaluateInterview(
   jd: JDContext,
   conversationHistory: Array<{ role: "ai" | "user"; content: string }>
 ): Promise<FullEvaluation> {
-  if (USE_PROXY) return callProxy<FullEvaluation>("evaluateInterview", { jd, conversationHistory });
+  if (await USE_PROXY()) return callProxy<FullEvaluation>("evaluateInterview", { jd, conversationHistory });
   const openai = await getOpenAI();
   const qaText = conversationHistory
     .reduce((acc: Array<{ q: string; a: string }>, msg, i) => {
@@ -299,8 +369,8 @@ export async function evaluateInterview(
       `${i + 1}. "${d.dimension}" (weight: ${d.weight}%)\n   What it measures: ${d.description}\n   Minimum bar: ${d.bar}`
   ).join("\n\n");
 
-  const response = await openai.chat.completions.create({
-    model: "gpt-4o",
+  const response = await withRetry(() => openai.chat.completions.create({
+    model: "gemini-2.5-flash-lite",
     temperature: 0,
     max_completion_tokens: 4096,
     messages: [
@@ -372,11 +442,11 @@ Return a single JSON object:
 Return only valid JSON, no markdown, no code blocks.`,
       },
     ],
-  });
+  }));
 
   const content = response.choices[0]?.message?.content ?? "{}";
   try {
-    return JSON.parse(content) as FullEvaluation;
+    return JSON.parse(extractJSON(content)) as FullEvaluation;
   } catch {
     return {
       overallScore: 0,
@@ -388,4 +458,26 @@ Return only valid JSON, no markdown, no code blocks.`,
       questionEvals: [],
     };
   }
+}
+
+export async function transcribeAudio(audioBlob: Blob): Promise<string> {
+  const cfg = await loadConfig();
+  const groqKey = cfg.GROQ_API_KEY;
+  if (!groqKey) throw new Error("Groq API key not configured");
+
+  const formData = new FormData();
+  formData.append("file", audioBlob, "audio.webm");
+  formData.append("model", "whisper-large-v3-turbo");
+  formData.append("language", "en");
+  formData.append("response_format", "text");
+
+  const res = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${groqKey}` },
+    body: formData,
+  });
+
+  if (!res.ok) throw new Error(`Transcription failed: ${res.status}`);
+  const text = await res.text();
+  return text.trim();
 }

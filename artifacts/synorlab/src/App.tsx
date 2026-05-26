@@ -3,9 +3,12 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { lazy, Suspense, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { ClerkProvider, RedirectToSignIn, useAuth, useUser, useClerk, SignIn, SignUp } from "@clerk/react";
+import { AuthProvider, useAuthContext } from "@/lib/auth-context";
+import { supabase } from "@/lib/supabase";
 import { useGetUserProfile } from "@/hooks/api";
 import Landing from "@/pages/landing";
+import SignInPage from "@/pages/sign-in";
+import SignUpPage from "@/pages/sign-up";
 import { GraduationCap } from "lucide-react";
 
 const NotFound = lazy(() => import("@/pages/not-found"));
@@ -37,7 +40,7 @@ const Spinner = () => (
 );
 
 function EduEmailRequired({ email }: { email: string }) {
-  const { signOut } = useClerk();
+  const { signOut } = useAuthContext();
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
@@ -61,7 +64,7 @@ function EduEmailRequired({ email }: { email: string }) {
           <a href="/contact" className="underline text-primary font-medium">contact our team</a> for a Professional or Enterprise account — no .edu email needed.
         </p>
         <button
-          onClick={() => signOut({ redirectUrl: "/sign-in" })}
+          onClick={() => signOut().then(() => window.location.href = "/sign-in")}
           className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-semibold hover:bg-muted transition-colors"
         >
           Sign out and use a different email
@@ -71,13 +74,18 @@ function EduEmailRequired({ email }: { email: string }) {
   );
 }
 
+function RedirectToSignIn() {
+  const [, navigate] = useLocation();
+  useEffect(() => { navigate("/sign-in", { replace: true }); }, [navigate]);
+  return <Spinner />;
+}
+
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isSignedIn, isLoaded } = useAuth();
-  const { user } = useUser();
-  const { data: profile, isLoading: profileLoading } = useGetUserProfile();
+  const { isSignedIn, isLoaded, user } = useAuthContext();
+  const { data: profile, isLoading: profileLoading, error: profileError } = useGetUserProfile();
   const [, navigate] = useLocation();
 
-  const primaryEmail = user?.primaryEmailAddress?.emailAddress ?? "";
+  const primaryEmail = user?.email ?? "";
   const needsSetup = isSignedIn && profile != null && !profile.profileCompleted;
   const eduBlocked =
     isSignedIn &&
@@ -92,6 +100,15 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (!isLoaded || (isSignedIn && profileLoading)) return <Spinner />;
   if (!isSignedIn) return <RedirectToSignIn />;
+  if (profileError) return (
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <div className="max-w-md text-center">
+        <p className="text-sm font-semibold text-red-500 mb-2">Failed to load profile</p>
+        <p className="text-xs text-muted-foreground bg-muted rounded px-3 py-2 font-mono">{(profileError as Error).message}</p>
+        <button onClick={() => window.location.reload()} className="mt-4 text-xs text-primary underline">Retry</button>
+      </div>
+    </div>
+  );
   if (eduBlocked) return <EduEmailRequired email={primaryEmail} />;
   if (needsSetup) return <Spinner />;
 
@@ -99,7 +116,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 function AdminRoute({ children }: { children: React.ReactNode }) {
-  const { isSignedIn, isLoaded } = useAuth();
+  const { isSignedIn, isLoaded } = useAuthContext();
   const { data: profile, isLoading: profileLoading } = useGetUserProfile();
   const [, navigate] = useLocation();
 
@@ -117,7 +134,7 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
 }
 
 function FacilityRoute({ children }: { children: React.ReactNode }) {
-  const { isSignedIn, isLoaded } = useAuth();
+  const { isSignedIn, isLoaded } = useAuthContext();
   const { data: profile, isLoading: profileLoading } = useGetUserProfile();
   const [, navigate] = useLocation();
 
@@ -136,12 +153,11 @@ function FacilityRoute({ children }: { children: React.ReactNode }) {
 }
 
 function ProfileSetupRoute() {
-  const { isSignedIn, isLoaded } = useAuth();
-  const { user } = useUser();
+  const { isSignedIn, isLoaded, user } = useAuthContext();
   const { data: profile, isLoading: profileLoading } = useGetUserProfile();
   const [, navigate] = useLocation();
 
-  const primaryEmail = user?.primaryEmailAddress?.emailAddress ?? "";
+  const primaryEmail = user?.email ?? "";
   const alreadyDone = isSignedIn && profile?.profileCompleted;
   const eduBlocked =
     isSignedIn &&
@@ -171,27 +187,8 @@ function AppRoutes() {
         <Route path="/pricing"><Pricing /></Route>
         <Route path="/contact"><Contact /></Route>
 
-        <Route path="/sign-in">
-          <div className="min-h-screen flex items-center justify-center bg-background p-4">
-            <SignIn routing="path" path="/sign-in" fallbackRedirectUrl="/dashboard" />
-          </div>
-        </Route>
-        <Route path="/sign-in/:rest*">
-          <div className="min-h-screen flex items-center justify-center bg-background p-4">
-            <SignIn routing="path" path="/sign-in" fallbackRedirectUrl="/dashboard" />
-          </div>
-        </Route>
-
-        <Route path="/sign-up">
-          <div className="min-h-screen flex items-center justify-center bg-background p-4">
-            <SignUp routing="path" path="/sign-up" fallbackRedirectUrl="/dashboard" />
-          </div>
-        </Route>
-        <Route path="/sign-up/:rest*">
-          <div className="min-h-screen flex items-center justify-center bg-background p-4">
-            <SignUp routing="path" path="/sign-up" fallbackRedirectUrl="/dashboard" />
-          </div>
-        </Route>
+        <Route path="/sign-in"><SignInPage /></Route>
+        <Route path="/sign-up"><SignUpPage /></Route>
 
         <Route path="/profile-setup">
           <ProfileSetupRoute />
@@ -239,79 +236,14 @@ function AppRoutes() {
   );
 }
 
-function ClerkWrappedApp() {
-  const [, navigate] = useLocation();
-
-  return (
-    <ClerkProvider
-      publishableKey={import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || ""}
-      proxyUrl={import.meta.env.VITE_CLERK_PROXY_URL as string | undefined}
-      routerPush={(to) => navigate(to)}
-      routerReplace={(to) => navigate(to, { replace: true })}
-      appearance={{
-        variables: {
-          colorPrimary: "#ED6C00",
-          colorBackground: "#FFFFFF",
-          colorInputBackground: "#FAFAFA",
-          colorText: "#1A1A1A",
-          colorTextSecondary: "#6b7280",
-          colorNeutral: "#6b7280",
-          colorInputText: "#1A1A1A",
-          colorShimmer: "#F5F4F2",
-          borderRadius: "0.375rem",
-          fontFamily: "'Nunito', sans-serif",
-        },
-        elements: {
-          card: {
-            background: "#FFFFFF",
-            border: "1px solid #E8E6E3",
-            boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-          },
-          headerTitle: { color: "#1A1A1A", fontWeight: "700" },
-          headerSubtitle: { color: "#6b7280" },
-          socialButtonsBlockButton: {
-            background: "#FAFAFA",
-            border: "1px solid #E8E6E3",
-            color: "#1A1A1A",
-          },
-          socialButtonsBlockButtonText: { color: "#1A1A1A" },
-          dividerLine: { background: "#E8E6E3" },
-          dividerText: { color: "#9ca3af" },
-          formFieldLabel: { color: "#4b5563" },
-          formFieldInput: {
-            background: "#FFFFFF",
-            border: "1px solid #E8E6E3",
-            color: "#1A1A1A",
-          },
-          formButtonPrimary: {
-            background: "#ED6C00",
-            color: "#FFFFFF",
-            fontWeight: "700",
-          },
-          footerActionText: { color: "#6b7280" },
-          footerActionLink: { color: "#ED6C00" },
-          identityPreviewText: { color: "#1A1A1A" },
-          identityPreviewEditButton: { color: "#ED6C00" },
-          formResendCodeLink: { color: "#ED6C00" },
-          otpCodeFieldInput: {
-            background: "#FAFAFA",
-            border: "1px solid #E8E6E3",
-            color: "#1A1A1A",
-          },
-        },
-      }}
-    >
-      <AppRoutes />
-    </ClerkProvider>
-  );
-}
-
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <ClerkWrappedApp />
+          <AuthProvider>
+            <AppRoutes />
+          </AuthProvider>
         </WouterRouter>
         <Toaster />
       </TooltipProvider>

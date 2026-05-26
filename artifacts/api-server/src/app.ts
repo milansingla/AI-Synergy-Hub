@@ -1,6 +1,7 @@
-import express, { type Express } from "express";
+import express, { type Express, type Request, type Response } from "express";
 import cors from "cors";
 import pinoHttp from "pino-http";
+import path from "path";
 import { clerkMiddleware } from "@clerk/express";
 import { publishableKeyFromHost } from "@clerk/shared/keys";
 import {
@@ -58,5 +59,22 @@ app.use(
 );
 
 app.use("/api", router);
+
+// Serve frontend static files when built together on Railway
+const STATIC_DIR = path.resolve(process.cwd(), "artifacts/synorlab/dist/public");
+
+// Dynamic config.js so apiUrl is always correct (same-origin on Railway)
+app.get("/config.js", (_req: Request, res: Response) => {
+  res.setHeader("Content-Type", "application/javascript");
+  res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+  res.send(`window.__SYNORLAB_CONFIG__ = { apiUrl: "" };`);
+});
+
+app.use(express.static(STATIC_DIR));
+
+// SPA fallback — let React Router handle all non-API routes
+app.get("*", (_req: Request, res: Response) => {
+  res.sendFile(path.join(STATIC_DIR, "index.html"));
+});
 
 export default app;

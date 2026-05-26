@@ -1,41 +1,27 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
+import basicSsl from "@vitejs/plugin-basic-ssl";
 import path from "path";
-import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 
-// In dev (Replit), PORT and BASE_PATH are always injected by the workflow.
-// In a production build (CI / local) they are optional — use safe defaults.
-const isDevServer = process.argv.includes("serve") || process.argv.includes("dev");
-
-const rawPort = process.env.PORT;
-if (!rawPort && isDevServer) {
-  throw new Error("PORT environment variable is required for the dev server.");
-}
-const port = Number(rawPort ?? "5173");
-
+// PORT and BASE_PATH default to local-dev values when not set by a host platform (e.g. Replit).
+const port = Number(process.env.PORT ?? "5173");
 const basePath = process.env.BASE_PATH ?? "/";
-if (!process.env.BASE_PATH && isDevServer) {
-  throw new Error("BASE_PATH environment variable is required for the dev server.");
-}
 
 export default defineConfig({
   base: basePath,
   plugins: [
     react(),
     tailwindcss(),
-    runtimeErrorOverlay(),
-    ...(process.env.NODE_ENV !== "production" &&
-    process.env.REPL_ID !== undefined
+    basicSsl(),
+    // Replit-only plugins load only when running inside Replit
+    ...(process.env.REPL_ID !== undefined
       ? [
+          await import("@replit/vite-plugin-runtime-error-modal").then((m) => m.default()),
           await import("@replit/vite-plugin-cartographer").then((m) =>
-            m.cartographer({
-              root: path.resolve(import.meta.dirname, ".."),
-            }),
+            m.cartographer({ root: path.resolve(import.meta.dirname, "..") })
           ),
-          await import("@replit/vite-plugin-dev-banner").then((m) =>
-            m.devBanner(),
-          ),
+          await import("@replit/vite-plugin-dev-banner").then((m) => m.devBanner()),
         ]
       : []),
   ],
@@ -69,6 +55,14 @@ export default defineConfig({
     allowedHosts: true,
     fs: {
       strict: true,
+    },
+    proxy: {
+      "/gemini": {
+        target: "https://generativelanguage.googleapis.com",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/gemini/, ""),
+        secure: true,
+      },
     },
   },
   preview: {

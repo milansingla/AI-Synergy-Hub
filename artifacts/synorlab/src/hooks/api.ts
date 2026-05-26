@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useAuth, useUser } from "@clerk/react";
-import { getSupabase } from "@/lib/supabase";
+import { useAuthContext } from "@/lib/auth-context";
+import { supabase } from "@/lib/supabase";
 import {
   parseJD,
   generateQuestions,
@@ -239,8 +239,8 @@ function toJDContext(jd: Record<string, unknown>): JDContext {
 /* ─── User hooks ────────────────────────────────────────────────────────── */
 
 export function useGetUserProfile() {
-  const { getToken, userId, isSignedIn } = useAuth();
-  const { user: clerkUser } = useUser();
+  const { userId, isSignedIn, user } = useAuthContext();
+  
 
   return useQuery<UserProfile>({
     queryKey: getGetUserProfileQueryKey(),
@@ -250,9 +250,7 @@ export function useGetUserProfile() {
       if (!USE_SUPABASE) {
         return restFetch<UserProfile>("/api/users/profile");
       }
-
-      const token = await getToken({ template: "supabase" });
-      const sb = getSupabase(token);
+      const sb = supabase;
 
       const { data: existing } = await sb
         .from("users")
@@ -263,25 +261,37 @@ export function useGetUserProfile() {
       if (existing) return serializeUser(existing as Record<string, unknown>);
 
       const email =
-        clerkUser?.primaryEmailAddress?.emailAddress ?? `${userId}@unknown.com`;
+        user?.email ?? `${userId}@unknown.com`;
 
       const { data: created, error } = await sb.rpc("upsert_user_profile", {
         p_user_id: userId,
         p_email: email,
       });
 
-      if (error) throw new Error(error.message);
+      if (error) {
+        // Race condition: another request already inserted the row — fetch it.
+        if (error.code === "23505") {
+          const { data: existing2 } = await sb
+            .from("users")
+            .select("*")
+            .eq("id", userId)
+            .maybeSingle();
+          if (existing2) return serializeUser(existing2 as Record<string, unknown>);
+        }
+        throw new Error(error.message);
+      }
       if (!created || (created as unknown[]).length === 0)
         throw new Error("Failed to create user");
 
       return serializeUser((created as Record<string, unknown>[])[0]);
     },
     enabled: !!userId && isSignedIn === true,
+    retry: 1,
   });
 }
 
 export function useCompleteUserProfile() {
-  const { getToken, userId } = useAuth();
+  const { userId } = useAuthContext();
   const qc = useQueryClient();
 
   return useMutation({
@@ -300,9 +310,7 @@ export function useCompleteUserProfile() {
           body: JSON.stringify(args.data),
         });
       }
-
-      const token = await getToken({ template: "supabase" });
-      const sb = getSupabase(token);
+      const sb = supabase;
 
       const { data, error } = await sb
         .from("users")
@@ -331,7 +339,7 @@ export function useUpdateUserProfile() {
 }
 
 export function useRedeemAccessCode() {
-  const { getToken, userId } = useAuth();
+  const { userId } = useAuthContext();
   const qc = useQueryClient();
 
   return useMutation({
@@ -343,9 +351,7 @@ export function useRedeemAccessCode() {
           body: JSON.stringify({ code: args.data.code }),
         });
       }
-
-      const token = await getToken({ template: "supabase" });
-      const sb = getSupabase(token);
+      const sb = supabase;
 
       const { data, error } = await sb.rpc("redeem_access_code", {
         p_code: args.data.code.toUpperCase().trim(),
@@ -364,7 +370,7 @@ export function useRedeemAccessCode() {
 /* ─── Interview stats hook ──────────────────────────────────────────────── */
 
 export function useGetInterviewStats() {
-  const { getToken, userId } = useAuth();
+  const { userId } = useAuthContext();
 
   return useQuery<InterviewStats>({
     queryKey: getGetInterviewStatsQueryKey(),
@@ -372,9 +378,7 @@ export function useGetInterviewStats() {
       if (!USE_SUPABASE) {
         return restFetch<InterviewStats>("/api/interviews/stats");
       }
-
-      const token = await getToken({ template: "supabase" });
-      const sb = getSupabase(token);
+      const sb = supabase;
 
       const { data: ivs } = await sb
         .from("interviews")
@@ -439,7 +443,7 @@ export function useGetInterviewStats() {
 /* ─── List interviews ───────────────────────────────────────────────────── */
 
 export function useListInterviews() {
-  const { getToken, userId } = useAuth();
+  const { userId } = useAuthContext();
 
   return useQuery<InterviewSummary[]>({
     queryKey: getListInterviewsQueryKey(),
@@ -447,9 +451,7 @@ export function useListInterviews() {
       if (!USE_SUPABASE) {
         return restFetch<InterviewSummary[]>("/api/interviews");
       }
-
-      const token = await getToken({ template: "supabase" });
-      const sb = getSupabase(token);
+      const sb = supabase;
 
       const { data: ivs } = await sb
         .from("interviews")
@@ -503,7 +505,7 @@ export function useGetInterview(
     };
   }
 ) {
-  const { getToken, userId } = useAuth();
+  const { userId } = useAuthContext();
   const queryKey = opts?.query?.queryKey ?? ["interview", id];
 
   return useQuery<InterviewDetail>({
@@ -512,9 +514,7 @@ export function useGetInterview(
       if (!USE_SUPABASE) {
         return restFetch<InterviewDetail>(`/api/interviews/${id}`);
       }
-
-      const token = await getToken({ template: "supabase" });
-      const sb = getSupabase(token);
+      const sb = supabase;
 
       const { data: iv, error } = await sb
         .from("interviews")
@@ -584,7 +584,7 @@ export function useGetInterview(
 /* ─── Upload JD (parse + save) ──────────────────────────────────────────── */
 
 export function useUploadJD() {
-  const { getToken, userId } = useAuth();
+  const { userId } = useAuthContext();
 
   return useMutation({
     mutationFn: async (args: { data: { text: string } }) => {
@@ -595,9 +595,7 @@ export function useUploadJD() {
       }
 
       const parsed = await parseJD(args.data.text);
-
-      const token = await getToken({ template: "supabase" });
-      const sb = getSupabase(token);
+      const sb = supabase;
 
       const { data: jd, error } = await sb
         .from("job_descriptions")
@@ -631,7 +629,7 @@ export function useUploadJD() {
 /* ─── Create interview ──────────────────────────────────────────────────── */
 
 export function useCreateInterview() {
-  const { getToken, userId } = useAuth();
+  const { userId } = useAuthContext();
 
   return useMutation({
     mutationFn: async (args: { data: { jdId: number } }) => {
@@ -641,9 +639,7 @@ export function useCreateInterview() {
           { ...jsonInit({ jdId: args.data.jdId }) }
         );
       }
-
-      const token = await getToken({ template: "supabase" });
-      const sb = getSupabase(token);
+      const sb = supabase;
 
       const { data: jd, error: jdErr } = await sb
         .from("job_descriptions")
@@ -655,8 +651,24 @@ export function useCreateInterview() {
       if (jdErr || !jd) throw new Error("Job description not found");
 
       const ctx = toJDContext(jd as Record<string, unknown>);
-      const questionSet = await generateQuestions(ctx);
-      const firstQuestion = await getNextQuestion(ctx, questionSet, [], 0);
+
+      let questionSet;
+      try {
+        questionSet = await generateQuestions(ctx);
+      } catch (genErr) {
+        const msg = genErr instanceof Error ? genErr.message : String(genErr);
+        console.error("generateQuestions failed:", msg);
+        throw new Error(`Failed to generate questions: ${msg}`);
+      }
+
+      if (!questionSet.opener && questionSet.all.length === 0) {
+        throw new Error("AI returned empty question set — please try again");
+      }
+
+      // Build the opening message locally — no second Gemini call needed
+      const companyCtx = ctx.company ? ` at ${ctx.company}` : "";
+      const openerText = questionSet.opener || `Could you start by introducing yourself and telling us what attracted you to this ${ctx.role} role?`;
+      const firstMessageContent = `Hello! I'm Priya Sharma, Senior HR Manager. Welcome to your interview for the ${ctx.role} position${companyCtx}. ${openerText}`;
 
       const { data: interview, error: ivErr } = await sb
         .from("interviews")
@@ -669,14 +681,17 @@ export function useCreateInterview() {
         .select()
         .single();
 
-      if (ivErr || !interview) throw new Error("Failed to create interview");
+      if (ivErr || !interview) {
+        console.error("Supabase insert failed:", ivErr);
+        throw new Error(`Failed to save interview: ${ivErr?.message ?? "unknown"}`);
+      }
 
       const ivRow = interview as Record<string, unknown>;
 
       await sb.from("interview_messages").insert({
         interview_id: ivRow.id as number,
         role: "ai",
-        content: firstQuestion.content,
+        content: firstMessageContent,
       });
 
       return {
@@ -693,7 +708,7 @@ export function useCreateInterview() {
 /* ─── Respond to interview ──────────────────────────────────────────────── */
 
 export function useRespondToInterview() {
-  const { getToken, userId } = useAuth();
+  const { userId } = useAuthContext();
 
   return useMutation({
     mutationFn: async (args: { id: number; data: { content: string } }) => {
@@ -704,9 +719,7 @@ export function useRespondToInterview() {
         );
         return { content: result.content, isComplete: result.isComplete, phase: "" };
       }
-
-      const token = await getToken({ template: "supabase" });
-      const sb = getSupabase(token);
+      const sb = supabase;
 
       const { data: iv, error } = await sb
         .from("interviews")
@@ -783,7 +796,7 @@ export function useRespondToInterview() {
 /* ─── Complete interview (evaluate) ────────────────────────────────────── */
 
 export function useCompleteInterview() {
-  const { getToken, userId } = useAuth();
+  const { userId } = useAuthContext();
 
   return useMutation({
     mutationFn: async (args: { id: number }) => {
@@ -793,9 +806,7 @@ export function useCompleteInterview() {
           headers: { "Content-Type": "application/json" },
         });
       }
-
-      const token = await getToken({ template: "supabase" });
-      const sb = getSupabase(token);
+      const sb = supabase;
 
       const { data: existing } = await sb
         .from("evaluations")
@@ -868,7 +879,6 @@ export function useCompleteInterview() {
 /* ─── Admin hooks ───────────────────────────────────────────────────────── */
 
 export function useGetAdminStats() {
-  const { getToken } = useAuth();
 
   return useQuery<AdminStats>({
     queryKey: getGetAdminStatsQueryKey(),
@@ -876,9 +886,7 @@ export function useGetAdminStats() {
       if (!USE_SUPABASE) {
         return restFetch<AdminStats>("/api/admin/stats");
       }
-
-      const token = await getToken({ template: "supabase" });
-      const sb = getSupabase(token);
+      const sb = supabase;
 
       const [
         { count: totalUsers },
@@ -914,7 +922,6 @@ export function useGetAdminStats() {
 }
 
 export function useListAllUsers() {
-  const { getToken } = useAuth();
 
   return useQuery<AdminUser[]>({
     queryKey: getListAllUsersQueryKey(),
@@ -922,9 +929,7 @@ export function useListAllUsers() {
       if (!USE_SUPABASE) {
         return restFetch<AdminUser[]>("/api/admin/users");
       }
-
-      const token = await getToken({ template: "supabase" });
-      const sb = getSupabase(token);
+      const sb = supabase;
 
       const { data: users } = await sb
         .from("users")
@@ -952,7 +957,6 @@ export function useListAllUsers() {
 }
 
 export function useUpdateUserRole() {
-  const { getToken } = useAuth();
   const qc = useQueryClient();
 
   return useMutation({
@@ -967,9 +971,7 @@ export function useUpdateUserRole() {
           body: JSON.stringify({ role: args.data.role }),
         });
       }
-
-      const token = await getToken({ template: "supabase" });
-      const sb = getSupabase(token);
+      const sb = supabase;
 
       const { data, error } = await sb.rpc("admin_update_user_role", {
         p_target_user_id: args.userId,
@@ -987,7 +989,6 @@ export function useUpdateUserRole() {
 }
 
 export function useDeleteUser() {
-  const { getToken } = useAuth();
   const qc = useQueryClient();
 
   return useMutation({
@@ -996,9 +997,7 @@ export function useDeleteUser() {
         await restFetch(`/api/admin/users/${args.userId}`, { method: "DELETE" });
         return;
       }
-
-      const token = await getToken({ template: "supabase" });
-      const sb = getSupabase(token);
+      const sb = supabase;
 
       const { error } = await sb.rpc("admin_delete_user", {
         p_target_user_id: args.userId,
@@ -1014,7 +1013,6 @@ export function useDeleteUser() {
 }
 
 export function useListAllInterviews() {
-  const { getToken } = useAuth();
 
   return useQuery<AdminInterview[]>({
     queryKey: getListAllInterviewsQueryKey(),
@@ -1022,9 +1020,7 @@ export function useListAllInterviews() {
       if (!USE_SUPABASE) {
         return restFetch<AdminInterview[]>("/api/admin/all-interviews");
       }
-
-      const token = await getToken({ template: "supabase" });
-      const sb = getSupabase(token);
+      const sb = supabase;
 
       const { data: ivs } = await sb
         .from("interviews")
@@ -1060,7 +1056,6 @@ export function useListAllInterviews() {
 }
 
 export function useDeleteAdminInterview() {
-  const { getToken } = useAuth();
   const qc = useQueryClient();
 
   return useMutation({
@@ -1069,9 +1064,7 @@ export function useDeleteAdminInterview() {
         await restFetch(`/api/admin/interviews/${args.id}`, { method: "DELETE" });
         return;
       }
-
-      const token = await getToken({ template: "supabase" });
-      const sb = getSupabase(token);
+      const sb = supabase;
 
       const { error } = await sb.rpc("admin_delete_interview", {
         p_id: args.id,
@@ -1089,7 +1082,6 @@ export function useDeleteAdminInterview() {
 /* ─── Invites ───────────────────────────────────────────────────────────── */
 
 export function useListInvites() {
-  const { getToken } = useAuth();
 
   return useQuery<Invite[]>({
     queryKey: getListInvitesQueryKey(),
@@ -1105,9 +1097,7 @@ export function useListInvites() {
           createdAt: (r.createdAt ?? r.created_at) as string,
         }));
       }
-
-      const token = await getToken({ template: "supabase" });
-      const sb = getSupabase(token);
+      const sb = supabase;
 
       const { data, error } = await sb
         .from("invites")
@@ -1129,7 +1119,6 @@ export function useListInvites() {
 }
 
 export function useCreateInvite() {
-  const { getToken } = useAuth();
   const qc = useQueryClient();
 
   return useMutation({
@@ -1139,9 +1128,7 @@ export function useCreateInvite() {
           ...jsonInit({ email: args.data.email, role: args.data.role }),
         });
       }
-
-      const token = await getToken({ template: "supabase" });
-      const sb = getSupabase(token);
+      const sb = supabase;
 
       const { data, error } = await sb.rpc("admin_create_invite", {
         p_email: args.data.email,
@@ -1158,7 +1145,6 @@ export function useCreateInvite() {
 }
 
 export function useDeleteInvite() {
-  const { getToken } = useAuth();
   const qc = useQueryClient();
 
   return useMutation({
@@ -1167,9 +1153,7 @@ export function useDeleteInvite() {
         await restFetch(`/api/admin/invites/${args.id}`, { method: "DELETE" });
         return;
       }
-
-      const token = await getToken({ template: "supabase" });
-      const sb = getSupabase(token);
+      const sb = supabase;
 
       const { error } = await sb.rpc("admin_delete_invite", {
         p_id: args.id,
@@ -1184,7 +1168,6 @@ export function useDeleteInvite() {
 }
 
 export function useBulkInvite() {
-  const { getToken } = useAuth();
   const qc = useQueryClient();
 
   return useMutation({
@@ -1195,9 +1178,7 @@ export function useBulkInvite() {
           { ...jsonInit({ invites: args.invites }) }
         );
       }
-
-      const token = await getToken({ template: "supabase" });
-      const sb = getSupabase(token);
+      const sb = supabase;
 
       const { data, error } = await sb.rpc("admin_bulk_invite", {
         p_invites: args.invites,
@@ -1215,7 +1196,6 @@ export function useBulkInvite() {
 /* ─── Access codes ──────────────────────────────────────────────────────── */
 
 export function useListAccessCodes() {
-  const { getToken } = useAuth();
 
   return useQuery<AccessCode[]>({
     queryKey: getListAccessCodesQueryKey(),
@@ -1232,9 +1212,7 @@ export function useListAccessCodes() {
           createdAt: (r.createdAt ?? r.created_at) as string,
         }));
       }
-
-      const token = await getToken({ template: "supabase" });
-      const sb = getSupabase(token);
+      const sb = supabase;
 
       const { data, error } = await sb
         .from("access_codes")
@@ -1257,7 +1235,6 @@ export function useListAccessCodes() {
 }
 
 export function useCreateAccessCode() {
-  const { getToken } = useAuth();
   const qc = useQueryClient();
 
   return useMutation({
@@ -1273,9 +1250,7 @@ export function useCreateAccessCode() {
           }),
         });
       }
-
-      const token = await getToken({ template: "supabase" });
-      const sb = getSupabase(token);
+      const sb = supabase;
 
       const prefix = args.data.role.toUpperCase().slice(0, 3);
       const randomHex = Array.from({ length: 6 }, () =>
@@ -1302,7 +1277,6 @@ export function useCreateAccessCode() {
 }
 
 export function useDeleteAccessCode() {
-  const { getToken } = useAuth();
   const qc = useQueryClient();
 
   return useMutation({
@@ -1311,9 +1285,7 @@ export function useDeleteAccessCode() {
         await restFetch(`/api/admin/access-codes/${args.id}`, { method: "DELETE" });
         return;
       }
-
-      const token = await getToken({ template: "supabase" });
-      const sb = getSupabase(token);
+      const sb = supabase;
 
       const { error } = await sb.rpc("admin_delete_access_code", {
         p_id: args.id,
@@ -1330,7 +1302,6 @@ export function useDeleteAccessCode() {
 /* ─── Facility hooks ────────────────────────────────────────────────────── */
 
 export function useGetFacilityStats() {
-  const { getToken } = useAuth();
 
   return useQuery<FacilityStats>({
     queryKey: ["facility-stats"],
@@ -1338,9 +1309,7 @@ export function useGetFacilityStats() {
       if (!USE_SUPABASE) {
         return restFetch<FacilityStats>("/api/facility/stats");
       }
-
-      const token = await getToken({ template: "supabase" });
-      const sb = getSupabase(token);
+      const sb = supabase;
 
       const { data: students } = await sb
         .from("users")
@@ -1471,7 +1440,6 @@ export async function downloadCohortReport(): Promise<void> {
 }
 
 export function useListFacilityStudents() {
-  const { getToken } = useAuth();
 
   return useQuery<FacilityStudent[]>({
     queryKey: ["facility-students"],
@@ -1479,9 +1447,7 @@ export function useListFacilityStudents() {
       if (!USE_SUPABASE) {
         return restFetch<FacilityStudent[]>("/api/facility/students");
       }
-
-      const token = await getToken({ template: "supabase" });
-      const sb = getSupabase(token);
+      const sb = supabase;
 
       const { data: students } = await sb
         .from("users")

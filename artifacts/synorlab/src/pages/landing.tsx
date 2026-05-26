@@ -1,6 +1,6 @@
 import { Link } from "wouter";
 import { useEffect, useState } from "react";
-import { useAuth } from "@clerk/react";
+import { useAuthContext } from "@/lib/auth-context";
 import { useLocation } from "wouter";
 import { ArrowRight } from "lucide-react";
 import { MarketingNav, MarketingFooter, MarketingStyles } from "@/components/marketing-layout";
@@ -336,7 +336,7 @@ export default function Landing() {
     "AI Mock Interview Platform for Indian Universities",
     "AI-powered mock interviews tailored to any job description. Instant scored feedback. Cohort dashboards for placement departments. Free for students with university email."
   );
-  const { isSignedIn, isLoaded } = useAuth();
+  const { isSignedIn, isLoaded } = useAuthContext();
   const [, navigate] = useLocation();
 
   useEffect(() => {
@@ -358,9 +358,9 @@ export default function Landing() {
         <div className="max-w-screen-xl mx-auto w-full flex flex-col lg:flex-row" style={{ minHeight: "calc(100vh - 64px)" }}>
 
           {/* Left — copy */}
-          <div className="flex-1 flex flex-col justify-center px-8 lg:px-16 py-16">
+          <div className="flex-1 flex flex-col justify-center px-8 lg:px-16 py-8 lg:py-10">
             {/* Eyebrow */}
-            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "2rem" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "1.25rem" }}>
               <div style={{ width: "36px", height: "2px", background: "#ED6C00", flexShrink: 0 }} />
               <span style={{ color: "#ED6C00", fontWeight: 700, fontSize: "0.65rem", letterSpacing: "0.2em" }}>
                 FOR PLACEMENT DEPARTMENTS
@@ -368,15 +368,15 @@ export default function Landing() {
             </div>
 
             {/* Headline */}
-            <h1 style={{ fontWeight: 900, lineHeight: 0.9, letterSpacing: "-0.04em", marginBottom: "2rem" }}>
-              <span style={{ display: "block", fontSize: "clamp(3rem,8vw,8rem)", color: "#0D0D0D" }}>PLACE</span>
-              <span style={{ display: "block", fontSize: "clamp(3rem,8vw,8rem)", color: "#ED6C00" }}>MORE</span>
-              <span style={{ display: "block", fontSize: "clamp(3rem,8vw,8rem)", color: "#2639A6" }}>STUDENTS.</span>
-              <span style={{ display: "block", fontSize: "clamp(3rem,8vw,8rem)", color: "#0D0D0D" }}>FASTER.</span>
+            <h1 style={{ fontWeight: 900, lineHeight: 0.88, letterSpacing: "-0.04em", marginBottom: "1.25rem" }}>
+              <span style={{ display: "block", fontSize: "clamp(2.6rem,6vw,6.5rem)", color: "#0D0D0D" }}>PLACE</span>
+              <span style={{ display: "block", fontSize: "clamp(2.6rem,6vw,6.5rem)", color: "#ED6C00" }}>MORE</span>
+              <span style={{ display: "block", fontSize: "clamp(2.6rem,6vw,6.5rem)", color: "#2639A6" }}>STUDENTS.</span>
+              <span style={{ display: "block", fontSize: "clamp(2.6rem,6vw,6.5rem)", color: "#0D0D0D" }}>FASTER.</span>
             </h1>
 
             {/* Sub */}
-            <p style={{ color: "#555", fontSize: "clamp(0.9rem,1.4vw,1.05rem)", lineHeight: 1.75, maxWidth: "430px", marginBottom: "2.25rem" }}>
+            <p style={{ color: "#555", fontSize: "clamp(0.85rem,1.2vw,1rem)", lineHeight: 1.7, maxWidth: "430px", marginBottom: "1.5rem" }}>
               Give every student unlimited AI-powered mock interview practice —
               tailored to their target role, scored instantly, with data your
               placement team can actually act on.
@@ -397,7 +397,7 @@ export default function Landing() {
             </div>
 
             {/* Social proof — initials avatars, no photos */}
-            <div style={{ display: "flex", alignItems: "center", gap: "14px", marginTop: "2.5rem" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "14px", marginTop: "1.5rem" }}>
               <div style={{ display: "flex" }}>
                 {[
                   { initials: "AS", bg: "#ED6C00" },

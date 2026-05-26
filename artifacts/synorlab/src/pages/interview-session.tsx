@@ -10,7 +10,8 @@ import {
 } from "@/hooks/api";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { Mic, MicOff, Volume2, AlertTriangle, CheckCircle2, Loader2, Home, XCircle, Building2 } from "lucide-react";
+import { transcribeAudio } from "@/lib/ai";
+import { Mic, MicOff, Volume2, AlertTriangle, CheckCircle2, Loader2, Home, XCircle, Building2, Mic2, LayoutList, BarChart2, Clock, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /* ─── Web Speech API type shims ────────────────────────────────────────────── */
@@ -40,6 +41,7 @@ type AnyWindow = Window & {
 type Phase =
   | "loading"
   | "intro"
+  | "system-check"
   | "ai-speaking"
   | "waiting"
   | "user-speaking"
@@ -56,7 +58,30 @@ interface LocalMessage {
 
 function getBestVoice(): SpeechSynthesisVoice | null {
   const voices = window.speechSynthesis?.getVoices() ?? [];
+  const isFemale = (v: SpeechSynthesisVoice) => {
+    const n = v.name.toLowerCase();
+    return (
+      n.includes("female") ||
+      n.includes("woman") ||
+      n.includes("zira") ||
+      n.includes("samantha") ||
+      n.includes("victoria") ||
+      n.includes("karen") ||
+      n.includes("moira") ||
+      n.includes("tessa") ||
+      n.includes("fiona") ||
+      n.includes("allison") ||
+      n.includes("ava") ||
+      n.includes("susan") ||
+      n.includes("serena") ||
+      n.includes("kate")
+    );
+  };
   return (
+    voices.find((v) => v.lang === "en-US" && isFemale(v) && v.name.toLowerCase().includes("natural")) ||
+    voices.find((v) => v.lang === "en-US" && isFemale(v) && !v.localService) ||
+    voices.find((v) => v.lang === "en-US" && isFemale(v)) ||
+    voices.find((v) => v.lang.startsWith("en") && isFemale(v)) ||
     voices.find((v) => v.lang === "en-US" && v.name.toLowerCase().includes("natural")) ||
     voices.find((v) => v.lang === "en-US" && !v.localService) ||
     voices.find((v) => v.lang === "en-US") ||
@@ -125,7 +150,11 @@ function AIAvatar({ phase }: { phase: Phase }) {
           : "bg-white/5 border border-white/10"
         )}>
           {processing ? (
-            <Loader2 size={40} className="text-white/40 animate-spin" />
+            <div className="flex items-end gap-1.5">
+              {[0,1,2].map(i => (
+                <div key={i} className="w-2 bg-white/40 rounded-full animate-bounce" style={{ height: 24, animationDelay: `${i*0.15}s`, animationDuration:"0.8s" }} />
+              ))}
+            </div>
           ) : (
             <svg viewBox="0 0 64 64" className={cn("w-16 h-16 transition-colors duration-500", speaking ? "text-cyan-400" : listening ? "text-emerald-400" : "text-white/30")} fill="currentColor">
               <rect x="10" y="28" width="6" height={speaking?"16":"8"}  rx="3" className={cn(speaking?"animate-bounce":"")} style={speaking?{animationDelay:"0ms",  animationDuration:"0.6s"}:{}} />
@@ -141,55 +170,313 @@ function AIAvatar({ phase }: { phase: Phase }) {
   );
 }
 
-function IntroScreen({ role, company, onStart, warnings }: { role: string; company: string; onStart: () => void; warnings: number }) {
+/* ─── Helpers ───────────────────────────────────────────────────────────── */
+function delay(ms: number) { return new Promise<void>((r) => setTimeout(r, ms)); }
+
+/* ─── SystemCheckScreen ─────────────────────────────────────────────────── */
+type CheckStatus = "idle" | "running" | "pass" | "warn" | "fail";
+interface CheckItem { id: string; label: string; desc: string; status: CheckStatus; detail: string; }
+
+function SystemCheckScreen({ onPass, onBack }: { onPass: () => void; onBack: () => void }) {
+  const INITIAL: CheckItem[] = [
+    { id: "mic",     label: "Microphone Permission", desc: "Requesting access to your microphone",              status: "idle", detail: "" },
+    { id: "audio",   label: "Audio Signal Quality",  desc: "Verifying microphone is capturing audio correctly", status: "idle", detail: "" },
+    { id: "network", label: "Network Connectivity",  desc: "Testing connection to transcription servers",       status: "idle", detail: "" },
+  ];
+
+  const [checks, setChecks]   = useState<CheckItem[]>(INITIAL);
+  const [allDone, setAllDone] = useState(false);
+  const [anyFail, setAnyFail] = useState(false);
+  const [volume, setVolume]   = useState(0);
+  const [runKey, setRunKey]   = useState(0);
+
+  const streamRef  = useRef<MediaStream | null>(null);
+  const animRef    = useRef<number>(0);
+  const isMounted  = useRef(true);
+
+  const upd = (id: string, patch: Partial<CheckItem>) =>
+    setChecks((prev) => prev.map((c) => (c.id === id ? { ...c, ...patch } : c)));
+
+  useEffect(() => {
+    isMounted.current = true;
+    setChecks(INITIAL);
+    setAllDone(false);
+    setAnyFail(false);
+    setVolume(0);
+
+    (async () => {
+      /* ── Step 1: Mic permission ─────────────────────────────────────── */
+      upd("mic", { status: "running" });
+      await delay(350);
+      let stream: MediaStream | null = null;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+        streamRef.current = stream;
+        upd("mic", { status: "pass", detail: "Permission granted — microphone is available" });
+      } catch (e: unknown) {
+        const name = (e as { name?: string })?.name ?? "";
+        const denied = name === "NotAllowedError" || name === "PermissionDeniedError";
+        upd("mic", { status: "fail", detail: denied ? "Permission denied — click the lock icon in the address bar to allow" : "No microphone device found" });
+        if (!isMounted.current) return;
+        setAnyFail(true); setAllDone(true); return;
+      }
+      await delay(250);
+
+      /* ── Step 2: Audio signal ──────────────────────────────────────── */
+      upd("audio", { status: "running" });
+      let maxVol = 0;
+      try {
+        const ctx = new AudioContext();
+        const src  = ctx.createMediaStreamSource(stream);
+        const anal = ctx.createAnalyser();
+        anal.fftSize = 256;
+        src.connect(anal);
+        const data = new Uint8Array(anal.frequencyBinCount);
+        const t0   = Date.now();
+
+        await new Promise<void>((res) => {
+          const tick = () => {
+            if (!isMounted.current) { res(); return; }
+            anal.getByteFrequencyData(data);
+            const avg  = data.reduce((a, b) => a + b, 0) / data.length;
+            const norm = avg / 128;
+            if (norm > maxVol) maxVol = norm;
+            setVolume(norm);
+            if (Date.now() - t0 > 3200) { res(); return; }
+            animRef.current = requestAnimationFrame(tick);
+          };
+          animRef.current = requestAnimationFrame(tick);
+        });
+
+        setVolume(0);
+        ctx.close().catch(() => {});
+
+        if (maxVol > 0.02) {
+          upd("audio", { status: "pass",  detail: `Signal detected — peak ${Math.round(maxVol * 100)}% — microphone is working` });
+        } else {
+          upd("audio", { status: "warn",  detail: "No audio detected — microphone may be muted or too far away" });
+        }
+      } catch {
+        upd("audio", { status: "warn", detail: "Could not measure signal level — proceeding anyway" });
+      }
+      await delay(200);
+
+      /* ── Step 3: Network latency ───────────────────────────────────── */
+      upd("network", { status: "running" });
+      try {
+        const t0  = performance.now();
+        await fetch("https://api.groq.com/openai/v1/models", { signal: AbortSignal.timeout(8000) });
+        const ms  = Math.round(performance.now() - t0);
+        if      (ms < 600)  upd("network", { status: "pass", detail: `Excellent — ${ms} ms latency` });
+        else if (ms < 1800) upd("network", { status: "pass", detail: `Good — ${ms} ms latency` });
+        else if (ms < 4000) upd("network", { status: "warn", detail: `Fair — ${ms} ms latency (transcription may be slightly slow)` });
+        else                upd("network", { status: "warn", detail: `High latency — ${ms} ms (check your internet connection)` });
+      } catch {
+        upd("network", { status: "warn", detail: "Could not reach transcription servers — check internet connection" });
+      }
+      await delay(300);
+
+      /* ── Done ──────────────────────────────────────────────────────── */
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+
+      if (!isMounted.current) return;
+      setChecks((prev) => {
+        const fail = prev.some((c) => c.status === "fail");
+        setAnyFail(fail);
+        setAllDone(true);
+        return prev;
+      });
+    })();
+
+    return () => {
+      isMounted.current = false;
+      cancelAnimationFrame(animRef.current);
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [runKey]);
+
+  const StatusIcon = ({ s }: { s: CheckStatus }) => {
+    if (s === "idle")    return <div className="w-4 h-4 rounded-full border border-white/15 bg-white/[0.04]" />;
+    if (s === "running") return <div className="w-4 h-4 rounded-full border-2 border-cyan-400 border-t-transparent animate-spin" />;
+    if (s === "pass")    return <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />;
+    if (s === "warn")    return <AlertTriangle size={16} className="text-amber-400 shrink-0" />;
+    return <XCircle size={16} className="text-rose-400 shrink-0" />;
+  };
+
+  const isAudioStep = (c: CheckItem) => c.id === "audio" && c.status === "running";
+
   return (
-    <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-8">
-      <div>
-        <div className="inline-flex items-center gap-2 bg-cyan-500/10 border border-cyan-500/20 rounded-full px-4 py-1.5 text-cyan-400 text-xs font-medium mb-6">
-          <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
-          AI Voice Interview
-        </div>
-        <h1 className="text-4xl font-bold text-white mb-2">{role}</h1>
-        {company && (
-          <div className="flex items-center justify-center gap-1.5 text-white/50 text-sm mb-4">
-            <Building2 size={13} />
-            <span>{company}</span>
-          </div>
-        )}
-        <p className="text-white/50 text-base max-w-md leading-relaxed mt-2">
-          A structured AI interview with phases covering technical, behavioural, and situational competencies — all specific to this job description.
-        </p>
+    <div className="flex-1 flex flex-col items-center justify-center px-6 gap-10">
+
+      {/* Header */}
+      <div className="flex flex-col items-center gap-2 text-center">
+        <p className="text-[10px] font-semibold tracking-[0.2em] uppercase text-white/30">System Verification</p>
+        <h2 className="text-2xl font-semibold text-white tracking-tight">Pre-Interview Check</h2>
+        <p className="text-white/35 text-sm">Verifying your setup before the session begins</p>
       </div>
 
-      <div className="grid grid-cols-3 gap-4 max-w-lg w-full text-sm">
-        {[
-          { icon: "🎙️", label: "Speak naturally",  sub: "The AI will listen and respond in real time" },
-          { icon: "📋", label: "Structured phases", sub: "Opening → Technical → Behavioural → Closing" },
-          { icon: "📊", label: "6-dimension score", sub: "Evaluated against top HR standards" },
-        ].map((item) => (
-          <div key={item.label} className="bg-white/5 border border-white/10 rounded-xl p-4">
-            <div className="text-2xl mb-2">{item.icon}</div>
-            <p className="text-white font-medium text-xs mb-1">{item.label}</p>
-            <p className="text-white/40 text-xs">{item.sub}</p>
+      {/* Steps */}
+      <div className="w-full max-w-md flex flex-col gap-2.5">
+        {checks.map((c, i) => (
+          <div
+            key={c.id}
+            className={cn(
+              "border rounded-lg px-5 py-4 transition-all duration-300",
+              c.status === "running" ? "border-cyan-500/30   bg-cyan-500/[0.04]"
+              : c.status === "pass"  ? "border-emerald-500/20 bg-emerald-500/[0.03]"
+              : c.status === "fail"  ? "border-rose-500/25   bg-rose-500/[0.04]"
+              : c.status === "warn"  ? "border-amber-500/20  bg-amber-500/[0.03]"
+              : "border-white/[0.07] bg-white/[0.02]"
+            )}
+          >
+            <div className="flex items-start gap-3.5">
+              <div className="mt-0.5 shrink-0"><StatusIcon s={c.status} /></div>
+              <div className="flex-1 min-w-0">
+                <p className="text-white/75 text-sm font-medium mb-0.5">
+                  <span className="text-white/25 font-normal mr-1.5 text-xs">0{i + 1}</span>
+                  {c.label}
+                </p>
+                <p className="text-white/30 text-xs leading-relaxed">
+                  {c.status === "idle" || c.status === "running" ? c.desc : c.detail}
+                </p>
+                {isAudioStep(c) && (
+                  <div className="mt-3">
+                    <p className="text-white/25 text-[11px] mb-2">Speak a few words to verify your microphone…</p>
+                    <div className="h-1 w-full bg-white/[0.06] rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-cyan-400 rounded-full transition-all duration-75"
+                        style={{ width: `${Math.min(100, volume * 260)}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         ))}
       </div>
 
-      {warnings > 0 && (
-        <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/30 rounded-xl px-4 py-3 text-amber-400 text-sm">
-          <AlertTriangle size={16} />
-          {warnings} warning{warnings > 1 ? "s" : ""} — {3 - warnings} exit{3 - warnings === 1 ? "" : "s"} remaining before cancellation
+      {/* CTA */}
+      {allDone && (
+        <div className="flex flex-col items-center gap-3 w-full max-w-xs">
+          {anyFail ? (
+            <>
+              <p className="text-rose-400/70 text-xs text-center">Fix the issues above, then retry.</p>
+              <button
+                onClick={() => { isMounted.current = true; setRunKey((k) => k + 1); }}
+                className="w-full inline-flex items-center justify-center gap-2 bg-white/[0.08] hover:bg-white/[0.12] text-white/80 font-semibold text-sm px-8 py-3.5 rounded-lg transition-colors border border-white/[0.12]"
+              >
+                Retry Checks
+              </button>
+            </>
+          ) : (
+            <>
+              <div className="flex items-center gap-1.5 text-emerald-400/70 text-[11px]">
+                <CheckCircle2 size={11} /> All checks passed — ready to begin
+              </div>
+              <button
+                onClick={onPass}
+                className="w-full inline-flex items-center justify-center gap-2.5 bg-cyan-500 hover:bg-cyan-400 active:bg-cyan-600 text-[#0a0f1a] font-semibold text-sm px-8 py-3.5 rounded-lg transition-colors duration-150"
+              >
+                <Mic size={15} /> Start Interview
+              </button>
+            </>
+          )}
+          <button
+            onClick={onBack}
+            className="text-white/20 hover:text-white/45 text-xs transition-colors mt-1"
+          >
+            ← Back
+          </button>
         </div>
       )}
+    </div>
+  );
+}
 
-      <button
-        onClick={onStart}
-        className="group relative inline-flex items-center gap-3 bg-cyan-500 hover:bg-cyan-400 text-[#0a0f1a] font-bold text-base px-10 py-4 rounded-2xl transition-all duration-200 shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/50 hover:scale-[1.03] active:scale-95"
-      >
-        <Mic size={20} />
-        Begin Interview
-      </button>
-      <p className="text-white/25 text-xs">Ensure your microphone and speakers are enabled before starting</p>
+function IntroScreen({ role, company, onStart, warnings }: { role: string; company: string; onStart: () => void; warnings: number }) {
+  const features = [
+    {
+      icon: <Mic2 size={16} className="text-white/60" />,
+      label: "Voice Assessment",
+      sub: "Respond naturally — AI evaluates content, clarity, and confidence",
+    },
+    {
+      icon: <LayoutList size={16} className="text-white/60" />,
+      label: "Structured Phases",
+      sub: "Opening · Technical · Behavioural · Situational · Closing",
+    },
+    {
+      icon: <BarChart2 size={16} className="text-white/60" />,
+      label: "6-Dimension Scoring",
+      sub: "Benchmarked against industry HR evaluation standards",
+    },
+  ];
+
+  return (
+    <div className="flex-1 flex flex-col items-center justify-center px-6 text-center gap-10">
+
+      {/* Header */}
+      <div className="flex flex-col items-center gap-3 max-w-xl">
+        <p className="text-[10px] font-semibold tracking-[0.2em] uppercase text-white/30">
+          Assessment Session
+        </p>
+        <h1 className="text-3xl font-semibold text-white tracking-tight leading-snug">
+          {role}
+        </h1>
+        {company && (
+          <div className="flex items-center gap-1.5 text-white/40 text-sm">
+            <Building2 size={12} />
+            <span>{company}</span>
+          </div>
+        )}
+        <p className="text-white/40 text-sm leading-relaxed mt-1 max-w-md">
+          A structured interview across technical, behavioural, and situational competencies — tailored to this job description.
+        </p>
+      </div>
+
+      {/* Feature cards */}
+      <div className="grid grid-cols-3 gap-3 max-w-2xl w-full">
+        {features.map((item) => (
+          <div
+            key={item.label}
+            className="bg-white/[0.03] border border-white/[0.08] rounded-lg p-4 text-left"
+          >
+            <div className="w-7 h-7 rounded-md bg-white/[0.06] border border-white/10 flex items-center justify-center mb-3">
+              {item.icon}
+            </div>
+            <p className="text-white/80 text-xs font-medium mb-1">{item.label}</p>
+            <p className="text-white/35 text-xs leading-relaxed">{item.sub}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Divider + action */}
+      <div className="flex flex-col items-center gap-4 w-full max-w-xs">
+        {warnings > 0 && (
+          <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 rounded-lg px-4 py-2.5 text-amber-400/90 text-xs w-full justify-center">
+            <AlertTriangle size={13} />
+            {warnings} warning{warnings > 1 ? "s" : ""} — {3 - warnings} exit{3 - warnings === 1 ? "" : "s"} remaining
+          </div>
+        )}
+
+        <button
+          onClick={onStart}
+          className="w-full inline-flex items-center justify-center gap-2.5 bg-cyan-500 hover:bg-cyan-400 active:bg-cyan-600 text-[#0a0f1a] font-semibold text-sm px-8 py-3.5 rounded-lg transition-colors duration-150"
+        >
+          <Mic size={15} />
+          Begin Interview
+        </button>
+
+        <div className="flex items-center gap-4 text-white/20 text-[11px]">
+          <span className="flex items-center gap-1"><Mic size={10} /> Microphone required</span>
+          <span className="w-px h-3 bg-white/10" />
+          <span className="flex items-center gap-1"><Shield size={10} /> Session is private</span>
+        </div>
+      </div>
+
     </div>
   );
 }
@@ -256,6 +543,10 @@ export default function InterviewSession() {
 
   const containerRef       = useRef<HTMLDivElement>(null);
   const recognitionRef     = useRef<ISpeechRecognition | null>(null);
+  const recStoppedRef      = useRef(false);
+  const mediaRecorderRef   = useRef<MediaRecorder | null>(null);
+  const audioChunksRef     = useRef<Blob[]>([]);
+  const micStreamRef       = useRef<MediaStream | null>(null);
   const interviewActiveRef = useRef(false);
   const warningsRef        = useRef(0);
   const transcriptRef      = useRef("");
@@ -269,6 +560,7 @@ export default function InterviewSession() {
   const [localMessages, setLocalMessages] = useState<LocalMessage[]>([]);
   const [transcriptDisplay, setTDisplay]  = useState("");
   const [interimDisplay, setIDisplay]     = useState("");
+  const [textInput, setTextInput]         = useState("");
   const [warnings, setWarnings]           = useState(0);
   const [showWarning, setShowWarning]     = useState(false);
   const [showEndModal, setShowEndModal]   = useState(false);
@@ -293,7 +585,7 @@ export default function InterviewSession() {
     const voice = getBestVoice();
     if (voice) utterance.voice = voice;
     utterance.rate = 0.92;
-    utterance.pitch = 1.0;
+    utterance.pitch = 1.15;
     utterance.volume = 1.0;
     utterance.onend = () => onEnd?.();
     utterance.onerror = () => onEnd?.();
@@ -368,48 +660,59 @@ export default function InterviewSession() {
 
   /* ── STT stop ────────────────────────────────────────────────────────────── */
   const stopRecording = useCallback(() => {
-    const rec = recognitionRef.current;
-    if (!rec) return;
-    rec.onend = () => {
-      const final = (transcriptRef.current + " " + interimRef.current).trim();
-      transcriptRef.current = "";
-      interimRef.current = "";
-      setTDisplay("");
-      setIDisplay("");
-      recognitionRef.current = null;
-      submitAnswer(final);
+    const mr = mediaRecorderRef.current;
+    if (!mr) return;
+
+    setPhase("processing");
+    setTDisplay("");
+
+    mr.onstop = async () => {
+      const blob = new Blob(audioChunksRef.current, { type: mr.mimeType || "audio/webm" });
+      audioChunksRef.current = [];
+      mediaRecorderRef.current = null;
+      mr.stream?.getTracks().forEach((t) => t.stop());
+
+      try {
+        const text = await transcribeAudio(blob);
+        setTDisplay("");
+        setIDisplay("");
+        if (!text.trim()) {
+          setPhase("waiting");
+          toast({ title: "No speech detected", description: "Please speak clearly and try again.", variant: "destructive" });
+          return;
+        }
+        submitAnswer(text);
+      } catch (e) {
+        setTDisplay("");
+        setIDisplay("");
+        toast({ title: "Transcription failed", description: String(e), variant: "destructive" });
+        setPhase("waiting");
+      }
     };
-    rec.stop();
-  }, [submitAnswer]);
+
+    mr.stop();
+  }, [submitAnswer, toast]);
 
   /* ── STT start ───────────────────────────────────────────────────────────── */
-  const startRecording = useCallback(() => {
-    const w = window as AnyWindow;
-    const SpeechRec = w.SpeechRecognition ?? w.webkitSpeechRecognition;
-    if (!SpeechRec) {
-      toast({ title: "Speech recognition is not supported in this browser", variant: "destructive" });
-      return;
+  const startRecording = useCallback(async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioChunksRef.current = [];
+
+      const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+        ? "audio/webm;codecs=opus"
+        : MediaRecorder.isTypeSupported("audio/webm")
+        ? "audio/webm"
+        : "";
+
+      const mr = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+      mr.ondataavailable = (e) => { if (e.data.size > 0) audioChunksRef.current.push(e.data); };
+      mr.start(250);
+      mediaRecorderRef.current = mr;
+      setPhase("user-speaking");
+    } catch {
+      toast({ title: "Microphone access denied", description: "Allow microphone access in browser settings.", variant: "destructive" });
     }
-    const recognition = new SpeechRec();
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = "en-US";
-    recognition.onresult = (e: ISpeechRecognitionEvent) => {
-      let interim = "";
-      let final = "";
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        const t = e.results[i][0].transcript;
-        if (e.results[i].isFinal) final += t + " ";
-        else interim += t;
-      }
-      if (final) { transcriptRef.current += final; setTDisplay(transcriptRef.current); }
-      interimRef.current = interim;
-      setIDisplay(interim);
-    };
-    recognition.onerror = () => { recognitionRef.current = null; setPhase("waiting"); };
-    recognitionRef.current = recognition;
-    setPhase("user-speaking");
-    recognition.start();
   }, [toast]);
 
   /* ── Fullscreen ──────────────────────────────────────────────────────────── */
@@ -504,7 +807,16 @@ export default function InterviewSession() {
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [localMessages]);
 
   useEffect(() => {
-    return () => { window.speechSynthesis?.cancel(); recognitionRef.current?.stop(); interviewActiveRef.current = false; };
+    return () => {
+      window.speechSynthesis?.cancel();
+      recStoppedRef.current = true;
+      if (recognitionRef.current) {
+        recognitionRef.current.onend = null;
+        try { recognitionRef.current.stop(); } catch { /* ignore */ }
+        recognitionRef.current = null;
+      }
+      interviewActiveRef.current = false;
+    };
   }, []);
 
   /* ── Render ──────────────────────────────────────────────────────────────── */
@@ -520,7 +832,7 @@ export default function InterviewSession() {
     <div ref={containerRef} className="w-screen h-screen bg-[#0a0f1a] flex flex-col overflow-hidden" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
 
       {/* Top bar */}
-      {phase !== "intro" && phase !== "cancelled" && (
+      {phase !== "intro" && phase !== "system-check" && phase !== "cancelled" && (
         <header className="flex items-center justify-between px-6 py-3.5 border-b border-white/[0.07] shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-7 h-7 bg-cyan-500 rounded-md flex items-center justify-center shrink-0">
@@ -592,9 +904,27 @@ export default function InterviewSession() {
           <IntroScreen
             role={interview?.role ?? "Interview"}
             company={(interview as any)?.company ?? ""}
-            onStart={startInterview}
+            onStart={() => setPhase("system-check")}
             warnings={warnings}
           />
+        </>
+      )}
+
+      {/* System Check */}
+      {phase === "system-check" && (
+        <>
+          <header className="flex items-center justify-between px-8 py-5 shrink-0">
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 bg-cyan-500 rounded-md flex items-center justify-center shrink-0">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" className="text-[#0a0f1a]"><polygon points="7,1 13,4 13,10 7,13 1,10 1,4" /></svg>
+              </div>
+              <span className="text-white font-semibold text-sm">Synorlab</span>
+            </div>
+            <button onClick={() => navigate("/")} className="flex items-center gap-1.5 text-xs text-white/30 hover:text-white/60 transition-colors">
+              <Home size={13} /> Home
+            </button>
+          </header>
+          <SystemCheckScreen onPass={startInterview} onBack={() => setPhase("intro")} />
         </>
       )}
 
@@ -602,7 +932,7 @@ export default function InterviewSession() {
       {phase === "cancelled" && <CancelledScreen onGoHome={() => navigate("/")} />}
 
       {/* Active interview */}
-      {phase !== "intro" && phase !== "cancelled" && (
+      {phase !== "intro" && phase !== "system-check" && phase !== "cancelled" && (
         <div className="flex flex-1 min-h-0">
           {/* Center */}
           <div className="flex-1 flex flex-col items-center justify-center gap-0 relative">
@@ -611,8 +941,8 @@ export default function InterviewSession() {
             <div className="h-10 flex items-center mt-6">
               {phase === "ai-speaking"  && <p className="text-white/50 text-sm tracking-wide animate-pulse">Interviewer is speaking…</p>}
               {phase === "waiting"      && <p className="text-cyan-400 text-sm font-medium">Your turn — press the mic to answer</p>}
-              {phase === "user-speaking"&& <p className="text-emerald-400 text-sm font-medium animate-pulse">Listening — press stop when done</p>}
-              {phase === "processing"   && <p className="text-white/40 text-sm">Processing your answer…</p>}
+              {phase === "user-speaking"&& <p className="text-emerald-400 text-sm font-medium animate-pulse">🔴 Recording your voice — press the red button when done speaking</p>}
+              {phase === "processing"   && <p className="text-white/40 text-sm animate-pulse">Thinking…</p>}
               {phase === "complete"     && <p className="text-cyan-400 text-sm font-medium">Generating your evaluation…</p>}
             </div>
 
@@ -636,8 +966,12 @@ export default function InterviewSession() {
                 </button>
               )}
               {phase === "processing" && (
-                <div className="w-20 h-20 rounded-full bg-white/5 border border-white/10 flex items-center justify-center">
-                  <Loader2 size={28} className="text-white/30 animate-spin" />
+                <div className="w-20 h-20 rounded-full bg-white/5 border border-white/10 flex items-center justify-center opacity-50">
+                  <div className="flex items-end gap-1">
+                    {[0,1,2].map(i => (
+                      <div key={i} className="w-1.5 bg-white rounded-full animate-bounce" style={{ height: 14, animationDelay: `${i*0.15}s`, animationDuration:"0.8s" }} />
+                    ))}
+                  </div>
                 </div>
               )}
               {phase === "ai-speaking" && (
